@@ -1,11 +1,13 @@
 """Zazu Python SDK. Mirrors lib/zazu.rb."""
 
+from . import transfer_authorization
 from ._version import __version__
 from .client import Zazu
 from .errors import (
     ZazuArgumentError,
     ZazuAuthenticationError,
     ZazuConfigurationError,
+    ZazuConflictError,
     ZazuConnectionError,
     ZazuError,
     ZazuForbiddenError,
@@ -21,6 +23,7 @@ from .resources.checkout_sessions import CheckoutSessions
 from .resources.customers import Customers
 from .resources.entity import Entity
 from .resources.invoices import Invoices
+from .resources.payee_trust_requests import PayeeTrustRequests
 from .resources.payment_links import PaymentLinks
 from .resources.transfer_drafts import TransferDrafts
 from .resources.webhook_endpoints import WebhookEndpoints
@@ -38,6 +41,7 @@ __all__ = [
     "Entity",
     "Invoices",
     "Page",
+    "PayeeTrustRequests",
     "PaymentLinks",
     "TransferDrafts",
     "WebhookEndpoints",
@@ -45,6 +49,7 @@ __all__ = [
     "ZazuArgumentError",
     "ZazuAuthenticationError",
     "ZazuConfigurationError",
+    "ZazuConflictError",
     "ZazuConnectionError",
     "ZazuError",
     "ZazuForbiddenError",
@@ -54,4 +59,5 @@ __all__ = [
     "ZazuServerError",
     "ZazuValidationError",
     "__version__",
+    "transfer_authorization",
 ]

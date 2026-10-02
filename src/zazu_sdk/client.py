@@ -13,6 +13,7 @@ from ._version import __version__
 from .errors import (
     ZazuAuthenticationError,
     ZazuConfigurationError,
+    ZazuConflictError,
     ZazuConnectionError,
     ZazuError,
     ZazuForbiddenError,
@@ -28,12 +29,14 @@ from .resources.checkout_sessions import CheckoutSessions
 from .resources.customers import Customers
 from .resources.entity import Entity
 from .resources.invoices import Invoices
+from .resources.payee_trust_requests import PayeeTrustRequests
 from .resources.payment_links import PaymentLinks
 from .resources.transfer_drafts import TransferDrafts
 from .resources.webhook_endpoints import WebhookEndpoints
 from .response import ZazuResponse
 
-DEFAULT_BASE_URL = "https://zazu.ma"
+# Morocco production. South Africa is https://za.manza.finance.
+DEFAULT_BASE_URL = "https://ma.manza.finance"
 DEFAULT_TIMEOUT = 30.0
 USER_AGENT = f"zazu-sdk/{__version__}"
 
@@ -70,6 +73,7 @@ class Zazu:
         self.customers = Customers(self)
         self.entity = Entity(self)
         self.invoices = Invoices(self)
+        self.payee_trust_requests = PayeeTrustRequests(self)
         self.payment_links = PaymentLinks(self)
         self.transfer_drafts = TransferDrafts(self)
         self.webhook_endpoints = WebhookEndpoints(self)
@@ -107,7 +111,7 @@ class Zazu:
         request_kwargs: dict[str, Any] = {"headers": request_headers}
         if body is not None:
             request_headers["Content-Type"] = "application/json"
-            request_kwargs["content"] = json.dumps(body)
+            request_kwargs["content"] = json.dumps(body, separators=(",", ":"))
 
         try:
             raw = self._http.request(method.upper(), url, **request_kwargs)
@@ -181,8 +185,14 @@ def _build_error(response: ZazuResponse) -> ZazuError:
         return ZazuForbiddenError(message or "Forbidden", **opts)
     if status == 404:
         return ZazuNotFoundError(message or "Not found", **opts)
+    if status == 400:
+        return ZazuValidationError(message or "Bad request", **opts)
     if status == 422:
         return ZazuValidationError(message or "Validation failed", **opts)
+    if status == 409:
+        return ZazuConflictError(
+            message or "Conflict", payment_id=payload.get("payment_id"), **opts
+        )
     if status == 429:
         retry_after = response.headers.get("retry-after")
         try:

@@ -9,6 +9,7 @@ from zazu_sdk import (
     Zazu,
     ZazuAuthenticationError,
     ZazuConfigurationError,
+    ZazuConflictError,
     ZazuConnectionError,
     ZazuForbiddenError,
     ZazuNotFoundError,
@@ -36,15 +37,15 @@ def test_api_key_from_env(monkeypatch):
 def test_base_url_default():
     client = Zazu(api_key="sk_test")
     try:
-        assert client.base_url == "https://zazu.ma"
+        assert client.base_url == "https://ma.manza.finance"
     finally:
         client.close()
 
 
 def test_base_url_strips_trailing_slash():
-    client = Zazu(api_key="sk_test", base_url="https://staging.zazu.ma/")
+    client = Zazu(api_key="sk_test", base_url="https://ma.manza.dev/")
     try:
-        assert client.base_url == "https://staging.zazu.ma"
+        assert client.base_url == "https://ma.manza.dev"
     finally:
         client.close()
 
@@ -74,6 +75,8 @@ def _client_with_response(
         (401, ZazuAuthenticationError),
         (403, ZazuForbiddenError),
         (404, ZazuNotFoundError),
+        (400, ZazuValidationError),
+        (409, ZazuConflictError),
         (422, ZazuValidationError),
         (500, ZazuServerError),
         (503, ZazuServerError),
@@ -88,6 +91,33 @@ def test_status_to_error_class(status, exc):
             client.entity.get()
         assert info.value.status == status
         assert info.value.message == "nope"
+    finally:
+        client.close()
+
+
+def test_conflict_error_exposes_payment_id():
+    client = _client_with_response(
+        409,
+        body=(
+            b'{"error":{"type":"duplicate_client_reference","message":"dup",'
+            b'"payment_id":"draft-1"}}'
+        ),
+    )
+    try:
+        with pytest.raises(ZazuConflictError) as info:
+            client.entity.get()
+        assert info.value.payment_id == "draft-1"
+        assert info.value.type == "duplicate_client_reference"
+    finally:
+        client.close()
+
+
+def test_conflict_error_payment_id_defaults_to_none():
+    client = _client_with_response(409, body=b'{"error":{"message":"nope"}}')
+    try:
+        with pytest.raises(ZazuConflictError) as info:
+            client.entity.get()
+        assert info.value.payment_id is None
     finally:
         client.close()
 
