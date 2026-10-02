@@ -4,13 +4,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-[ -d .venv ] || python3 -m venv .venv
-# shellcheck disable=SC1091
-. .venv/bin/activate
+# A venv bakes its absolute path into activate and every script shebang, so one
+# left behind by a moved checkout looks present but runs nothing: rebuild it.
+.venv/bin/pip --version >/dev/null 2>&1 || { rm -rf .venv; python3 -m venv .venv; }
+PY=.venv/bin/python
 
-python -m pip install --quiet --upgrade pip
-pip install --quiet -e ".[dev]"
-python scripts/fetch_cassettes.py   # the replay tests need the zazu-ruby cassette tarball, as in CI
-ruff check
-mypy
-pytest
+"$PY" -m pip install --quiet --upgrade pip
+"$PY" -m pip install --quiet -e ".[dev]"
+"$PY" scripts/fetch_cassettes.py   # the replay tests need the zazu-ruby cassette tarball, as in CI
+"$PY" -m ruff check
+"$PY" -m mypy
+"$PY" -m pytest
