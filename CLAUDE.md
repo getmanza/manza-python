@@ -2,7 +2,7 @@
 
 Python SDK for the Zazu API. **Cassette consumer** — replays cassettes
 recorded by [`zazu-ruby`](https://github.com/getzazu/zazu-ruby) (the canonical
-SDK that records against `staging.zazu.ma`).
+SDK that records against `ma.manza.dev`).
 
 ## Stack
 
@@ -33,10 +33,12 @@ zazu.invoices.list()
 zazu.payment_links.cancel(id)
 zazu.webhook_endpoints.list()
 zazu.checkout_sessions.create(...)
+zazu.transfer_drafts.authorize(id, authorization_id, signature)
+zazu.payee_trust_requests.create([external_account_id])
 ```
 
 - `Page[T]` — cursor-based pagination, hard cap of 100/page (`MAX_PER_PAGE`)
-- 9-class `ZazuError` hierarchy — discriminate via `isinstance(err, ZazuValidationError)`, never status-code matching
+- 10-class `ZazuError` hierarchy — discriminate via `isinstance(err, ZazuValidationError)`, never status-code matching
 - Snake-case wire format — request/response bodies are returned as-is
 
 ## How to work in this codebase
@@ -49,10 +51,10 @@ zazu.checkout_sessions.create(...)
 ## Critical rules
 
 - **Cassettes come from `zazu-ruby`'s release tarball.** `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` from the latest non-draft `getzazu/zazu-ruby` release. Cassettes are git-ignored.
-- **Cassette replay is request-shape-strict.** The matcher compares method + scheme + host + path + sorted query params. Body match is loose (msw-style); the bytes must still parse, but JSON key order doesn't matter.
+- **Cassette replay is request-shape-strict.** The matcher compares method + scheme + host + path + sorted query params. Body match is off by default. The new transfer-authorization, beneficiary and trust-request cassettes opt in per test (`make_client(..., body_match="exact")`; the three authorize cassettes use `"without_signature"`), and request bodies are serialized compactly in recorded key order. Load one cassette per test.
 - **No long-lived PyPI API token.** Releases publish via OIDC trusted publishing through the `pypi` GitHub environment. Verify the binding on https://pypi.org/manage/account/publishing/ if it ever drifts.
 - **Ruby is the canonical surface.** New resources or methods are added to `zazu-ruby` first (which records the cassettes), then mirrored here. Don't add a method that has no cassette to back it.
-- **No new error classes without updating other SDKs.** The 9-class hierarchy is shared across SDKs.
+- **No new error classes without updating other SDKs.** The 10-class hierarchy is shared across SDKs.
 
 ## Development workflow
 

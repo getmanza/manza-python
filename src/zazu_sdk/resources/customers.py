@@ -23,6 +23,12 @@ class Customers(ResourceBase):
         return self.http_get(self.encode_path("api/customers", id))
 
     def create(self, **attributes: Any) -> ZazuResponse:
+        """POST /api/customers
+
+        Accepts registration_number and vat_number. ``tax_id`` and ``ice_number``
+        are market-gated: they are absent from requests and responses outside
+        Morocco.
+        """
         return self.http_post("api/customers", body=attributes)
 
     def update(self, id: str, **attributes: Any) -> ZazuResponse:

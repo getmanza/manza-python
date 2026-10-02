@@ -1,17 +1,21 @@
 """Reads VCR YAML cassettes (recorded by zazu-ruby) and registers them as
 `httpx.MockTransport` handlers so identical interactions replay against this
 SDK. The contract is enforced cross-language: every SDK that consumes this
-tarball must replay the exact request shape."""
+tarball must replay the exact request shape. Method, URI and sorted query always
+match; request bodies match only when a test opts in via `body_match`."""
 
 from __future__ import annotations
 
 import base64
+import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import parse_qsl, urlsplit
 
 import httpx
 import yaml
+
+BodyMatch = Literal["exact", "without_signature"]
 
 CASSETTE_DIR = Path(__file__).parent / "fixtures" / "cassettes"
 
@@ -42,7 +46,31 @@ def _sorted_query(qs: str) -> str:
     return "&".join(f"{k}={v}" for k, v in sorted(parse_qsl(qs, keep_blank_values=True)))
 
 
-def _interaction_matches(interaction: dict[str, Any], request: httpx.Request) -> bool:
+def _without_signature(body: str) -> Any:
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError:
+        return body
+    if isinstance(parsed, dict):
+        return {k: v for k, v in parsed.items() if k != "signature"}
+    return parsed
+
+
+def _body_matches(
+    interaction: dict[str, Any], request: httpx.Request, body_match: BodyMatch | None
+) -> bool:
+    if body_match is None:
+        return True
+    recorded = (interaction["request"].get("body") or {}).get("string") or ""
+    replayed = request.content.decode("utf-8")
+    if body_match == "exact":
+        return bool(recorded == replayed)
+    return bool(_without_signature(recorded) == _without_signature(replayed))
+
+
+def _interaction_matches(
+    interaction: dict[str, Any], request: httpx.Request, body_match: BodyMatch | None = None
+) -> bool:
     rec = interaction["request"]
     if rec["method"].upper() != request.method.upper():
         return False
@@ -54,7 +82,9 @@ def _interaction_matches(interaction: dict[str, Any], request: httpx.Request) ->
         req_url.path,
     ):
         return False
-    return _sorted_query(rec_url.query) == _sorted_query(req_url.query)
+    if _sorted_query(rec_url.query) != _sorted_query(req_url.query):
+        return False
+    return _body_matches(interaction, request, body_match)
 
 
 def _build_response(interaction: dict[str, Any]) -> httpx.Response:
@@ -75,7 +105,8 @@ def _build_response(interaction: dict[str, Any]) -> httpx.Response:
 class CassetteTransport:
     """An httpx.MockTransport handler that replays recorded interactions in order."""
 
-    def __init__(self, cassette_names: list[str]) -> None:
+    def __init__(self, cassette_names: list[str], body_match: BodyMatch | None = None) -> None:
+        self._body_match = body_match
         interactions: list[dict[str, Any]] = []
         for name in cassette_names:
             interactions.extend(_load_cassette(name))
@@ -83,7 +114,7 @@ class CassetteTransport:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         for i, interaction in enumerate(self._remaining):
-            if _interaction_matches(interaction, request):
+            if _interaction_matches(interaction, request, self._body_match):
                 self._remaining.pop(i)
                 return _build_response(interaction)
         raise AssertionError(
@@ -91,5 +122,8 @@ class CassetteTransport:
         )
 
 
-def cassette_client(cassette_names: list[str]) -> httpx.Client:
-    return httpx.Client(transport=httpx.MockTransport(CassetteTransport(cassette_names)))
+def cassette_client(
+    cassette_names: list[str], body_match: BodyMatch | None = None
+) -> httpx.Client:
+    transport = CassetteTransport(cassette_names, body_match)
+    return httpx.Client(transport=httpx.MockTransport(transport))

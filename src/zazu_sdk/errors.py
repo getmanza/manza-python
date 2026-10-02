@@ -1,4 +1,4 @@
-"""Mirrors lib/zazu/errors.rb. Nine-class hierarchy shared across SDKs."""
+"""Mirrors lib/zazu/errors.rb. Ten-class hierarchy shared across SDKs."""
 
 from __future__ import annotations
 
@@ -54,7 +54,22 @@ class ZazuNotFoundError(ZazuError):
 
 
 class ZazuValidationError(ZazuError):
-    """HTTP 422."""
+    """HTTP 400 (malformed request, e.g. a bad `limit`/`cursor`) or 422 (rejected body).
+
+    `param` carries the offending field name when the API supplies it.
+    """
+
+
+class ZazuConflictError(ZazuError):
+    """HTTP 409. The request conflicts with an existing resource.
+
+    For a duplicate `client_reference` on a transfer draft (`type` is
+    "duplicate_client_reference"), `payment_id` names the draft that already holds it.
+    """
+
+    def __init__(self, message: str, *, payment_id: str | None = None, **kwargs: Any) -> None:
+        super().__init__(message, **kwargs)
+        self.payment_id = payment_id
 
 
 class ZazuRateLimitError(ZazuError):

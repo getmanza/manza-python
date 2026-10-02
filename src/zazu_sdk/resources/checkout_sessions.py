@@ -13,4 +13,11 @@ class CheckoutSessions(ResourceBase):
         return self.http_get(self.encode_path("api/checkout_sessions", id))
 
     def create(self, **attributes: Any) -> ZazuResponse:
+        """POST /api/checkout_sessions
+
+        Besides the required account_id, amount, success_url and cancel_url,
+        accepts customer_name, collect_billing_address and billing_address.
+        Responses carry settled_at and transaction; ``status`` can be
+        ``clearing`` (paid, awaiting settlement).
+        """
         return self.http_post("api/checkout_sessions", body=attributes)

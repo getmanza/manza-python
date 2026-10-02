@@ -26,3 +26,6 @@ def test_get(make_client):
     response = zazu.checkout_sessions.get(FIXTURE_IDS["ZAZU_FIXTURE_CHECKOUT_SESSION_ID"])
     assert isinstance(response.body["id"], str)
     assert isinstance(response.body["status"], str)
+    assert "settled_at" in response.body
+    assert "transaction" in response.body
+    assert "billing_address" in response.body
