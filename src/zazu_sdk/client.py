@@ -111,7 +111,10 @@ class Zazu:
         request_kwargs: dict[str, Any] = {"headers": request_headers}
         if body is not None:
             request_headers["Content-Type"] = "application/json"
-            request_kwargs["content"] = json.dumps(body, separators=(",", ":"))
+            # Compact, raw UTF-8: byte-identical to zazu-ruby's JSON.generate.
+            request_kwargs["content"] = json.dumps(
+                body, separators=(",", ":"), ensure_ascii=False
+            ).encode()
 
         try:
             raw = self._http.request(method.upper(), url, **request_kwargs)

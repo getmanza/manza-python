@@ -149,3 +149,22 @@ def test_connection_failure_wraps_as_connection_error():
             client.entity.get()
     finally:
         client.close()
+
+
+def test_request_body_is_compact_utf8_json():
+    # Matches Ruby's JSON.generate byte for byte, so exact-body cassettes
+    # recorded by zazu-ruby replay here: no spaces, raw UTF-8, no \u escapes.
+    seen: list[bytes] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.content)
+        return httpx.Response(201, headers={"content-type": "application/json"}, content=b"{}")
+
+    zazu = Zazu(
+        api_key="sk_test",
+        base_url="https://ma.manza.dev",
+        http_client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    zazu.beneficiaries.create(company_name="Société Générale", beneficiary_type="business")
+
+    assert seen == ['{"company_name":"Société Générale","beneficiary_type":"business"}'.encode()]
