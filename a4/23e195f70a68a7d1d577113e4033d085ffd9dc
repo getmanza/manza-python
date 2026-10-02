@@ -1,0 +1,19 @@
+scripts/release-check
+  s_93c95e718145f8::t_9dc091b08d7968 7-10,12-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a423e195f70a68a7d1d577113e4033d085ffd9dc",
+  "prompts": {},
+  "sessions": {
+    "s_93c95e718145f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "774928e1-4413-4c52-b2e3-92366a484aab",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "mhenrixon <mikael@mhenrixon.com>"
+    }
+  }
+}
