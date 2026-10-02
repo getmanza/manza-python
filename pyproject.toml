@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "zazu-sdk"
-description = "Python SDK for the Zazu API."
+name = "manza"
+description = "Python SDK for the Manza API."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-authors = [{ name = "Zazu", email = "engineering@zazu.ma" }]
-keywords = ["zazu", "sdk", "api", "fintech", "morocco"]
+authors = [{ name = "Manza", email = "hello@get-manza.com" }]
+keywords = ["manza", "sdk", "api", "fintech", "morocco"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -36,20 +36,20 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/getzazu/zazu-python"
-Documentation = "https://github.com/getzazu/zazu-python#readme"
-Repository = "https://github.com/getzazu/zazu-python"
-Issues = "https://github.com/getzazu/zazu-python/issues"
-Changelog = "https://github.com/getzazu/zazu-python/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/getmanza/manza-python"
+Documentation = "https://github.com/getmanza/manza-python#readme"
+Repository = "https://github.com/getmanza/manza-python"
+Issues = "https://github.com/getmanza/manza-python/issues"
+Changelog = "https://github.com/getmanza/manza-python/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
-path = "src/zazu_sdk/_version.py"
+path = "src/manza/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/zazu_sdk"]
+packages = ["src/manza"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/zazu_sdk", "README.md", "CHANGELOG.md", "LICENSE"]
+include = ["src/manza", "README.md", "CHANGELOG.md", "LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -88,4 +88,4 @@ ignore = [
 [tool.mypy]
 python_version = "3.11"
 strict = true
-files = ["src/zazu_sdk"]
+files = ["src/manza"]

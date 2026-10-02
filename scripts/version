@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # bin/release adapter: print the current version, or write a new one into every
-# tracked file that carries it (src/zazu_sdk/_version.py; pyproject.toml reads it
+# tracked file that carries it (src/manza/_version.py; pyproject.toml reads it
 # via hatch). PEP 440 spells prereleases 1.0.0rc1 where semver says 1.0.0-rc.1:
 # convert when writing and back when reading so the semver string round-trips.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-file="src/zazu_sdk/_version.py"
+file="src/manza/_version.py"
 
 if [ $# -eq 0 ]; then
   pep=$(sed -nE 's/^__version__ = "([^"]+)"$/\1/p' "$file")

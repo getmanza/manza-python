@@ -1,4 +1,4 @@
-"""Mirrors lib/zazu/response.rb."""
+"""Mirrors lib/manza/response.rb."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 import httpx
 
 
-class ZazuResponse:
+class ManzaResponse:
     """Thin wrapper over httpx.Response — exposes status, headers, and parsed body."""
 
     def __init__(self, raw: httpx.Response, body: Any) -> None:

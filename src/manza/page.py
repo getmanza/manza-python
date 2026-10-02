@@ -1,11 +1,11 @@
-"""Mirrors lib/zazu/page.rb. Cursor-based pagination, hard cap of 100 items per page."""
+"""Mirrors lib/manza/page.rb. Cursor-based pagination, hard cap of 100 items per page."""
 
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from typing import Any, Generic, TypeVar
 
-from .response import ZazuResponse
+from .response import ManzaResponse
 
 MAX_PER_PAGE = 100
 
@@ -17,7 +17,7 @@ class Page(Generic[T]):
 
     def __init__(
         self,
-        response: ZazuResponse,
+        response: ManzaResponse,
         fetcher: Callable[[str | None], "Page[T]"],
     ) -> None:
         self.response = response

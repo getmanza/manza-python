@@ -1,19 +1,19 @@
-"""Mirror of spec/zazu/resources/transfer_drafts_spec.rb."""
+"""Mirror of spec/manza/resources/transfer_drafts_spec.rb."""
 
 from __future__ import annotations
 
 import httpx
 import pytest
 
-from tests.fixture_ids import FIXTURE_IDS, REPLAY_BASE_URL, TEST_API_KEY
-from zazu_sdk import (
-    Zazu,
-    ZazuArgumentError,
-    ZazuConflictError,
-    ZazuForbiddenError,
-    ZazuValidationError,
+from manza import (
+    Manza,
+    ManzaArgumentError,
+    ManzaConflictError,
+    ManzaForbiddenError,
+    ManzaValidationError,
     transfer_authorization,
 )
+from tests.fixture_ids import FIXTURE_IDS, REPLAY_BASE_URL, TEST_API_KEY
 
 # Placeholder for the authorizer's signing secret: replay never reproduces the
 # recorded HMAC (it signs the real nonce under the real secret), so the
@@ -23,38 +23,38 @@ AUTHORIZER_SIGNING_SECRET = "whsec_replay_placeholder"
 
 
 def test_create(make_client):
-    zazu = make_client(["transfer_drafts/create"], body_match="exact")
-    response = zazu.transfer_drafts.create(
-        account_id=FIXTURE_IDS["ZAZU_FIXTURE_ACCOUNT_ID"],
-        beneficiary_id=FIXTURE_IDS["ZAZU_FIXTURE_BENEFICIARY_ID"],
+    manza = make_client(["transfer_drafts/create"], body_match="exact")
+    response = manza.transfer_drafts.create(
+        account_id=FIXTURE_IDS["MANZA_FIXTURE_ACCOUNT_ID"],
+        beneficiary_id=FIXTURE_IDS["MANZA_FIXTURE_BENEFICIARY_ID"],
         amount="150.00",
         payment_reference="SDK fixture",
-        client_reference=FIXTURE_IDS["ZAZU_FIXTURE_CLIENT_REFERENCE"],
+        client_reference=FIXTURE_IDS["MANZA_FIXTURE_CLIENT_REFERENCE"],
     )
     assert response.status == 201
     assert response.body["status"] == "requested"
-    assert response.body["client_reference"] == FIXTURE_IDS["ZAZU_FIXTURE_CLIENT_REFERENCE"]
+    assert response.body["client_reference"] == FIXTURE_IDS["MANZA_FIXTURE_CLIENT_REFERENCE"]
     assert "authorization" in response.body
     assert response.body["transfer"] is None
 
 
 def test_create_duplicate_client_reference(make_client):
-    zazu = make_client(["transfer_drafts/create_duplicate"], body_match="exact")
-    with pytest.raises(ZazuConflictError) as info:
-        zazu.transfer_drafts.create(
-            account_id=FIXTURE_IDS["ZAZU_FIXTURE_ACCOUNT_ID"],
-            beneficiary_id=FIXTURE_IDS["ZAZU_FIXTURE_BENEFICIARY_ID"],
+    manza = make_client(["transfer_drafts/create_duplicate"], body_match="exact")
+    with pytest.raises(ManzaConflictError) as info:
+        manza.transfer_drafts.create(
+            account_id=FIXTURE_IDS["MANZA_FIXTURE_ACCOUNT_ID"],
+            beneficiary_id=FIXTURE_IDS["MANZA_FIXTURE_BENEFICIARY_ID"],
             amount="10.00",
-            client_reference=FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE"],
+            client_reference=FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE"],
         )
     assert info.value.status == 409
     assert info.value.type == "duplicate_client_reference"
-    assert info.value.payment_id == FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_DRAFT_ID"]
+    assert info.value.payment_id == FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID"]
 
 
 def test_get(make_client):
-    zazu = make_client(["transfer_drafts/get"])
-    response = zazu.transfer_drafts.get(FIXTURE_IDS["ZAZU_FIXTURE_TRANSFER_DRAFT_ID"])
+    manza = make_client(["transfer_drafts/get"])
+    response = manza.transfer_drafts.get(FIXTURE_IDS["MANZA_FIXTURE_TRANSFER_DRAFT_ID"])
     assert isinstance(response.body["id"], str)
     assert "status" in response.body
     assert "transfer" in response.body
@@ -65,57 +65,57 @@ def test_authorize_blank_signature_raises_before_any_http_call(signature):
     def handler(_request: httpx.Request) -> httpx.Response:
         raise AssertionError("no HTTP call expected")
 
-    zazu = Zazu(
+    manza = Manza(
         api_key=TEST_API_KEY,
         base_url=REPLAY_BASE_URL,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
-    with pytest.raises(ZazuArgumentError, match="signature"):
-        zazu.transfer_drafts.authorize("draft", "auth", signature)
+    with pytest.raises(ManzaArgumentError, match="signature"):
+        manza.transfer_drafts.authorize("draft", "auth", signature)
 
 
 # Order matters while recording: five consecutive bad signatures suspend the
 # authorizer, and only a valid authorize resets the streak. Replay is
 # order-independent, one cassette per test.
 def test_authorize_bad_signature(make_client):
-    zazu = make_client(["transfer_drafts/authorize_bad_signature"], body_match="without_signature")
-    with pytest.raises(ZazuValidationError) as info:
-        zazu.transfer_drafts.authorize(
-            FIXTURE_IDS["ZAZU_FIXTURE_BAD_SIGNATURE_DRAFT_ID"],
-            FIXTURE_IDS["ZAZU_FIXTURE_BAD_SIGNATURE_AUTHORIZATION_ID"],
+    manza = make_client(["transfer_drafts/authorize_bad_signature"], body_match="without_signature")
+    with pytest.raises(ManzaValidationError) as info:
+        manza.transfer_drafts.authorize(
+            FIXTURE_IDS["MANZA_FIXTURE_BAD_SIGNATURE_DRAFT_ID"],
+            FIXTURE_IDS["MANZA_FIXTURE_BAD_SIGNATURE_AUTHORIZATION_ID"],
             "0" * 64,
         )
     assert info.value.type == "invalid_signature"
 
 
 def test_authorize_with_the_creating_key(make_client):
-    zazu = make_client(["transfer_drafts/authorize_same_key"], body_match="without_signature")
-    with pytest.raises(ZazuForbiddenError) as info:
-        zazu.transfer_drafts.authorize(
-            FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_DRAFT_ID"],
-            FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID"],
+    manza = make_client(["transfer_drafts/authorize_same_key"], body_match="without_signature")
+    with pytest.raises(ManzaForbiddenError) as info:
+        manza.transfer_drafts.authorize(
+            FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID"],
+            FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID"],
             "0" * 64,
         )
     assert info.value.type == "same_key_forbidden"
 
 
 def test_authorize(make_client):
-    zazu = make_client(["transfer_drafts/authorize"], body_match="without_signature")
-    draft_id = FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_DRAFT_ID"]
+    manza = make_client(["transfer_drafts/authorize"], body_match="without_signature")
+    draft_id = FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID"]
     signature_input = transfer_authorization.signature_input(
         payment_id=draft_id,
-        nonce=FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_NONCE"],
+        nonce=FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_NONCE"],
         amount="10.0",
         currency_code="MAD",
-        account_id=FIXTURE_IDS["ZAZU_FIXTURE_ACCOUNT_ID"],
+        account_id=FIXTURE_IDS["MANZA_FIXTURE_ACCOUNT_ID"],
         payee=transfer_authorization.payee_for(
-            external_account_id=FIXTURE_IDS["ZAZU_FIXTURE_TRUSTED_EXTERNAL_ACCOUNT_ID"]
+            external_account_id=FIXTURE_IDS["MANZA_FIXTURE_TRUSTED_EXTERNAL_ACCOUNT_ID"]
         ),
-        client_reference=FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE"],
+        client_reference=FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE"],
     )
-    response = zazu.transfer_drafts.authorize(
+    response = manza.transfer_drafts.authorize(
         draft_id,
-        FIXTURE_IDS["ZAZU_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID"],
+        FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_AUTHORIZATION_ID"],
         transfer_authorization.sign(AUTHORIZER_SIGNING_SECRET, signature_input),
     )
     assert response.status == 200
@@ -124,10 +124,10 @@ def test_authorize(make_client):
 
 
 def test_decline(make_client):
-    zazu = make_client(["transfer_drafts/decline"], body_match="exact")
-    authorization_id = FIXTURE_IDS["ZAZU_FIXTURE_DECLINABLE_AUTHORIZATION_ID"]
-    response = zazu.transfer_drafts.decline(
-        FIXTURE_IDS["ZAZU_FIXTURE_DECLINABLE_DRAFT_ID"], authorization_id, "SDK fixture"
+    manza = make_client(["transfer_drafts/decline"], body_match="exact")
+    authorization_id = FIXTURE_IDS["MANZA_FIXTURE_DECLINABLE_AUTHORIZATION_ID"]
+    response = manza.transfer_drafts.decline(
+        FIXTURE_IDS["MANZA_FIXTURE_DECLINABLE_DRAFT_ID"], authorization_id, "SDK fixture"
     )
     assert response.status == 200
     assert response.body["id"] == authorization_id
@@ -144,10 +144,10 @@ def test_decline_omits_reason_when_absent():
             200, headers={"content-type": "application/json"}, content=b'{"status":"declined"}'
         )
 
-    zazu = Zazu(
+    manza = Manza(
         api_key=TEST_API_KEY,
         base_url=REPLAY_BASE_URL,
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
-    zazu.transfer_drafts.decline("draft", "auth")
+    manza.transfer_drafts.decline("draft", "auth")
     assert seen == [b'{"authorization_id":"auth"}']

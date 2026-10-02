@@ -1,11 +1,40 @@
 # Changelog
 
-All notable changes to `zazu-sdk` are documented here.
+All notable changes to `manza` (formerly `zazu-sdk`) are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+- **Renamed from `zazu-sdk` to `manza`** (1.0.0 under the new name; see the
+  migration guide below). The package, import, classes, User-Agent and
+  environment variables all move from Zazu to Manza.
+- The version header is now `Manza-Version` (the API accepts both).
+- User-Agent is `manza-python/<version>` (was `zazu-sdk/<version>`).
+- Cassettes are fetched from `getmanza/manza-ruby`, pinned to `v1.0.0`.
+- The replay placeholders are `<MANZA_API_KEY>` / `<MANZA_VERSION>` and the
+  fixture variables are `MANZA_FIXTURE_*` (no fallback, dev-only).
+
+### Deprecated
+
+- `ZAZU_API_KEY`, `ZAZU_BASE_URL`, `ZAZU_API_VERSION` and `ZAZU_TIMEOUT` still
+  work for all of 1.x. `MANZA_*` wins when both are set; the legacy name emits
+  one `DeprecationWarning` per variable per process.
+
+### Migrating from `zazu-sdk` 0.x
+
+| Before | After |
+|---|---|
+| `pip install zazu-sdk` | `pip install manza` |
+| `from zazu_sdk import Zazu` | `from manza import Manza` |
+| `ZazuError`, `ZazuValidationError`, ... (every `Zazu*` class) | `ManzaError`, `ManzaValidationError`, ... |
+| `zazu_sdk.transfer_authorization` | `manza.transfer_authorization` |
+| `ZAZU_API_KEY` / `ZAZU_BASE_URL` / `ZAZU_API_VERSION` / `ZAZU_TIMEOUT` | `MANZA_API_KEY` / `MANZA_BASE_URL` / `MANZA_API_VERSION` / `MANZA_TIMEOUT` |
+| `Zazu-Version` header | `Manza-Version` |
+| repo `getzazu/zazu-python` | `getmanza/manza-python` |
 
 ### Added
 

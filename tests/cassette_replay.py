@@ -1,4 +1,4 @@
-"""Reads VCR YAML cassettes (recorded by zazu-ruby) and registers them as
+"""Reads VCR YAML cassettes (recorded by manza-ruby) and registers them as
 `httpx.MockTransport` handlers so identical interactions replay against this
 SDK. The contract is enforced cross-language: every SDK that consumes this
 tarball must replay the exact request shape. Method, URI and sorted query always
@@ -23,7 +23,7 @@ CASSETTE_DIR = Path(__file__).parent / "fixtures" / "cassettes"
 class _BinaryLoader(yaml.SafeLoader):
     """Ruby's Psych emits non-UTF-8 response bodies as `!binary | <base64>`,
     using a YAML primary tag rather than the canonical `tag:yaml.org,2002:binary`.
-    Register both forms; decode to a UTF-8 string since Zazu only returns JSON."""
+    Register both forms; decode to a UTF-8 string since Manza only returns JSON."""
 
 
 def _construct_binary(loader: yaml.Loader, node: yaml.Node) -> str:

@@ -1,16 +1,16 @@
-"""Mirror of spec/zazu/page_spec.rb."""
+"""Mirror of spec/manza/page_spec.rb."""
 
 from __future__ import annotations
 
 import httpx
 
-from zazu_sdk import MAX_PER_PAGE, Page
-from zazu_sdk.client import _parse_body  # type: ignore[attr-defined]
-from zazu_sdk.response import ZazuResponse
+from manza import MAX_PER_PAGE, Page
+from manza.client import _parse_body  # type: ignore[attr-defined]
+from manza.response import ManzaResponse
 
 
 class _StubResponse:
-    """Stand-in for ZazuResponse — Page only reads .body."""
+    """Stand-in for ManzaResponse — Page only reads .body."""
 
     def __init__(self, body: dict) -> None:
         self.body = body
@@ -55,14 +55,14 @@ def test_auto_paging_iter_walks_pages():
     assert list(page1.auto_paging_iter()) == [1, 2, 3, 4]
 
 
-def test_real_zazu_response_works():
-    """Sanity check: the stub above stands in for ZazuResponse, but Page also
+def test_real_manza_response_works():
+    """Sanity check: the stub above stands in for ManzaResponse, but Page also
     accepts the real one. This guards against `body` access drift."""
     raw = httpx.Response(
         200,
         headers={"content-type": "application/json"},
         content=b'{"data":[1],"has_more":false,"next_cursor":null}',
     )
-    response = ZazuResponse(raw, _parse_body(raw))
+    response = ManzaResponse(raw, _parse_body(raw))
     page: Page = Page(response, fetcher=lambda _c: page)  # type: ignore[arg-type, assignment]
     assert page.data == [1]

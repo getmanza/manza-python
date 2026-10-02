@@ -1,11 +1,11 @@
-# zazu-sdk
+# manza
 
 Python SDK for the [Manza API](https://ma.manza.finance).
 
 ## Install
 
 ```bash
-pip install zazu-sdk
+pip install manza
 ```
 
 Requires Python 3.11+.
@@ -13,9 +13,9 @@ Requires Python 3.11+.
 ## Quick start
 
 ```python
-from zazu_sdk import Zazu
+from manza import Manza
 
-client = Zazu(api_key="sk_live_...")
+client = Manza(api_key="sk_live_...")
 
 client.entity.get()
 client.accounts.list(currency_code="MAD")
@@ -39,15 +39,16 @@ client.checkout_sessions.create(
 client.checkout_sessions.get(session_id)
 ```
 
-The client picks up `ZAZU_API_KEY`, `ZAZU_BASE_URL`, `ZAZU_API_VERSION`, and
-`ZAZU_TIMEOUT` from the environment if you don't pass them.
+The client picks up `MANZA_API_KEY`, `MANZA_BASE_URL`, `MANZA_API_VERSION`, and
+`MANZA_TIMEOUT` from the environment if you don't pass them. The old `ZAZU_*`
+names still work for all of 1.x and emit a one-time `DeprecationWarning`.
 
 ### Hosts
 
 The default base URL is `https://ma.manza.finance` (Morocco). For South Africa:
 
 ```python
-client = Zazu(api_key="sk_live_...", base_url="https://za.manza.finance")
+client = Manza(api_key="sk_live_...", base_url="https://za.manza.finance")
 ```
 
 The replay tests run against the staging host `https://ma.manza.dev`.
@@ -83,14 +84,14 @@ draft = client.transfer_drafts.create(
 ).body
 ```
 
-A duplicate `client_reference` raises `ZazuConflictError` with `payment_id`
+A duplicate `client_reference` raises `ManzaConflictError` with `payment_id`
 naming the existing draft. A draft inside the entity's machine-authorization
 envelope is sent to the enrolled authorizer as a
 `payment.authorization_requested` webhook. Answer it with a different API key
-holding `transfers:authorize`, signing with `zazu_sdk.transfer_authorization`:
+holding `transfers:authorize`, signing with `manza.transfer_authorization`:
 
 ```python
-from zazu_sdk import transfer_authorization as ta
+from manza import transfer_authorization as ta
 
 signature_input = ta.signature_input(
     payment_id=draft["id"],
@@ -108,7 +109,7 @@ authorizer.transfer_drafts.authorize(draft["id"], authorization_id, signature)
 ```
 
 `payee_for` takes exactly one of `external_account_id` / `destination_account_id`.
-A blank signature raises `ZazuArgumentError` before any request is made.
+A blank signature raises `ManzaArgumentError` before any request is made.
 
 ## Pagination
 
@@ -126,28 +127,28 @@ for invoice in client.invoices.list().auto_paging_iter():
 
 ## Errors
 
-Ten concrete subclasses; discriminate with `isinstance`. `ZazuValidationError`
-covers 400 and 422, `ZazuConflictError` covers 409 and exposes `payment_id`:
+Ten concrete subclasses; discriminate with `isinstance`. `ManzaValidationError`
+covers 400 and 422, `ManzaConflictError` covers 409 and exposes `payment_id`:
 
 ```python
-from zazu_sdk import (
-    ZazuValidationError,
-    ZazuRateLimitError,
-    ZazuNotFoundError,
+from manza import (
+    ManzaValidationError,
+    ManzaRateLimitError,
+    ManzaNotFoundError,
 )
 
 try:
     client.invoices.get("nope")
-except ZazuNotFoundError as err:
+except ManzaNotFoundError as err:
     print(err.status, err.request_id, err.body)
-except ZazuRateLimitError as err:
+except ManzaRateLimitError as err:
     print("retry after", err.retry_after, "seconds")
 ```
 
 ## Cross-SDK contract
 
-`zazu-sdk` is one of several Zazu SDKs that all replay cassettes recorded by
-the canonical [`zazu-ruby`](https://github.com/getzazu/zazu-ruby) SDK against
+`manza` is one of several Manza SDKs that all replay cassettes recorded by
+the canonical [`manza-ruby`](https://github.com/getmanza/manza-ruby) SDK against
 staging (`ma.manza.dev`). The wire format is snake_case JSON; request and response shapes match
 across Ruby, TypeScript, Python, Go, and Rust.
 

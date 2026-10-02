@@ -1,7 +1,7 @@
-# zazu-python
+# manza-python
 
-Python SDK for the Zazu API. **Cassette consumer** — replays cassettes
-recorded by [`zazu-ruby`](https://github.com/getzazu/zazu-ruby) (the canonical
+Python SDK for the Manza API. **Cassette consumer** — replays cassettes
+recorded by [`manza-ruby`](https://github.com/getmanza/manza-ruby) (the canonical
 SDK that records against `ma.manza.dev`).
 
 ## Stack
@@ -9,51 +9,52 @@ SDK that records against `ma.manza.dev`).
 | Concern | Tool | Notes |
 |---|---|---|
 | Language | Python ≥ 3.11 (matrix: 3.11, 3.12, 3.13) | `pyproject.toml` `requires-python` |
-| HTTP | httpx (sync) | `src/zazu_sdk/client.py` |
+| HTTP | httpx (sync) | `src/manza/client.py` |
 | Tests | pytest | `tests/` |
 | Cassettes | Custom YAML reader → `httpx.MockTransport` | `tests/cassette_replay.py` |
 | Lint | ruff | `pyproject.toml` `[tool.ruff]` |
 | Types | mypy strict | `[tool.mypy]` |
 | Build | hatchling | `pyproject.toml` `[build-system]` |
-| Release | `bin/release` | zazu SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); PyPI **OIDC trusted publishing** via `.github/workflows/release.yml` |
+| Release | `bin/release` | manza SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); PyPI **OIDC trusted publishing** via `.github/workflows/release.yml` |
 
 ## Public API surface
 
 ```python
-from zazu_sdk import Zazu
+from manza import Manza
 
-zazu = Zazu(api_key="sk_live_...")
+manza = Manza(api_key="sk_live_...")
 
-zazu.entity.get()
-zazu.accounts.list(currency_code="MAD")
-zazu.accounts.list_transactions(account_id)
-zazu.customers.list(q="Acme")
-zazu.customers.create(...)
-zazu.invoices.list()
-zazu.payment_links.cancel(id)
-zazu.webhook_endpoints.list()
-zazu.checkout_sessions.create(...)
-zazu.transfer_drafts.authorize(id, authorization_id, signature)
-zazu.payee_trust_requests.create([external_account_id])
+manza.entity.get()
+manza.accounts.list(currency_code="MAD")
+manza.accounts.list_transactions(account_id)
+manza.customers.list(q="Acme")
+manza.customers.create(...)
+manza.invoices.list()
+manza.payment_links.cancel(id)
+manza.webhook_endpoints.list()
+manza.checkout_sessions.create(...)
+manza.transfer_drafts.authorize(id, authorization_id, signature)
+manza.payee_trust_requests.create([external_account_id])
 ```
 
 - `Page[T]` — cursor-based pagination, hard cap of 100/page (`MAX_PER_PAGE`)
-- 10-class `ZazuError` hierarchy — discriminate via `isinstance(err, ZazuValidationError)`, never status-code matching
+- 10-class `ManzaError` hierarchy — discriminate via `isinstance(err, ManzaValidationError)`, never status-code matching
 - Snake-case wire format — request/response bodies are returned as-is
 
 ## How to work in this codebase
 
 1. **Tests come first.** Every change to `src/` ships with a test. The cassette-replay tests are the cross-language contract.
-2. **Use the SDK's primitives.** `Page`, `ZazuError` subclasses, the `ResourceBase.http_get/post/patch/delete` helpers, `encode_path` for URL construction. Don't hand-roll `httpx` calls.
+2. **Use the SDK's primitives.** `Page`, `ManzaError` subclasses, the `ResourceBase.http_get/post/patch/delete` helpers, `encode_path` for URL construction. Don't hand-roll `httpx` calls.
 3. **Snake-case stays.** Response keys are wire-format. We don't camelCase them.
 4. **`ruff check` and `mypy` clean.** CI gates on both. Don't add `# noqa` to silence — fix the issue.
 
 ## Critical rules
 
-- **Cassettes come from `zazu-ruby`'s release tarball.** `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` from the latest non-draft `getzazu/zazu-ruby` release. Cassettes are git-ignored.
+- **Cassettes come from `manza-ruby`'s release tarball.** `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` from the `getmanza/manza-ruby` release pinned in `PINNED_TAG` (currently `v1.0.0`; bump it deliberately). Cassettes are git-ignored.
 - **Cassette replay is request-shape-strict.** The matcher compares method + scheme + host + path + sorted query params. Body match is off by default. The new transfer-authorization, beneficiary and trust-request cassettes opt in per test (`make_client(..., body_match="exact")`; the three authorize cassettes use `"without_signature"`), and request bodies are serialized compactly in recorded key order. Load one cassette per test.
+- **Env vars: `MANZA_*` first, `ZAZU_*` fallback.** `src/manza/_env.py` reads `MANZA_<NAME>`, then the legacy `ZAZU_<NAME>` with a one-time `DeprecationWarning`, for all of 1.x. Fixture vars (`MANZA_FIXTURE_*`) have no fallback.
 - **No long-lived PyPI API token.** Releases publish via OIDC trusted publishing through the `pypi` GitHub environment. Verify the binding on https://pypi.org/manage/account/publishing/ if it ever drifts.
-- **Ruby is the canonical surface.** New resources or methods are added to `zazu-ruby` first (which records the cassettes), then mirrored here. Don't add a method that has no cassette to back it.
+- **Ruby is the canonical surface.** New resources or methods are added to `manza-ruby` first (which records the cassettes), then mirrored here. Don't add a method that has no cassette to back it.
 - **No new error classes without updating other SDKs.** The 10-class hierarchy is shared across SDKs.
 
 ## Development workflow
@@ -75,7 +76,7 @@ mypy                                        # types
 bin/release list        # last releases + what patch/minor/major would give
 bin/release --dry-run   # version + changes since the last tag, publishes nothing
 bin/release minor       # or patch (default), major, an explicit 0.3.0; --force re-creates
-# → bumps src/zazu_sdk/_version.py, runs scripts/release-check, pushes main, publishes the GH release
+# → bumps src/manza/_version.py, runs scripts/release-check, pushes main, publishes the GH release
 # → release.yml workflow handles PyPI publish via OIDC
 ```
 
@@ -83,14 +84,14 @@ bin/release minor       # or patch (default), major, an explicit 0.3.0; --force 
 
 | SDK | Repo |
 |---|---|
-| Ruby (canonical) | https://github.com/getzazu/zazu-ruby |
-| TypeScript | https://github.com/getzazu/zazu-ts |
-| Python (this) | https://github.com/getzazu/zazu-python |
-| Go | https://github.com/getzazu/zazu-go (planned) |
-| Rust | https://github.com/getzazu/zazu-rust (planned) |
-| CLI | https://github.com/getzazu/cli |
+| Ruby (canonical) | https://github.com/getmanza/manza-ruby |
+| TypeScript | https://github.com/getmanza/manza-ts |
+| Python (this) | https://github.com/getmanza/manza-python |
+| Go | https://github.com/getmanza/manza-go (planned) |
+| Rust | https://github.com/getmanza/manza-rust (planned) |
+| CLI | https://github.com/getmanza/cli |
 
-If the contract breaks (e.g. new request shape), it's a coordinated change across at least zazu-ruby and every SDK that consumes the cassette tarball.
+If the contract breaks (e.g. new request shape), it's a coordinated change across at least manza-ruby and every SDK that consumes the cassette tarball.
 
 ## Models
 

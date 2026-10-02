@@ -1,20 +1,20 @@
-"""Mirrors lib/zazu/resources/base.rb."""
+"""Mirrors lib/manza/resources/base.rb."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
-from ..errors import ZazuArgumentError
+from ..errors import ManzaArgumentError
 from ..page import MAX_PER_PAGE, Page
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 
 if TYPE_CHECKING:
-    from ..client import Zazu
+    from ..client import Manza
 
 
 class ResourceBase:
-    def __init__(self, client: Zazu) -> None:
+    def __init__(self, client: Manza) -> None:
         self._client = client
 
     @staticmethod
@@ -36,7 +36,7 @@ class ResourceBase:
             # `/things/`, which on most APIs redispatches to the list
             # endpoint. Surface it loudly.
             if not text:
-                raise ZazuArgumentError("path segment cannot be blank")
+                raise ManzaArgumentError("path segment cannot be blank")
             encoded.append(quote(text, safe=""))
         return "/".join([base, *encoded])
 
@@ -45,7 +45,7 @@ class ResourceBase:
         path: str,
         *,
         params: dict[str, Any] | None = None,
-    ) -> ZazuResponse:
+    ) -> ManzaResponse:
         return self._client.request("GET", path, params=params)
 
     def http_post(
@@ -54,7 +54,7 @@ class ResourceBase:
         *,
         body: Any = None,
         params: dict[str, Any] | None = None,
-    ) -> ZazuResponse:
+    ) -> ManzaResponse:
         return self._client.request("POST", path, body=body, params=params)
 
     def http_patch(
@@ -62,10 +62,10 @@ class ResourceBase:
         path: str,
         *,
         body: Any = None,
-    ) -> ZazuResponse:
+    ) -> ManzaResponse:
         return self._client.request("PATCH", path, body=body)
 
-    def http_delete(self, path: str) -> ZazuResponse:
+    def http_delete(self, path: str) -> ManzaResponse:
         return self._client.request("DELETE", path)
 
     def list_page(

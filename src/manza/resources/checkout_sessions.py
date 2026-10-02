@@ -1,18 +1,18 @@
-"""Mirrors lib/zazu/resources/checkout_sessions.rb."""
+"""Mirrors lib/manza/resources/checkout_sessions.rb."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 from .base import ResourceBase
 
 
 class CheckoutSessions(ResourceBase):
-    def get(self, id: str) -> ZazuResponse:
+    def get(self, id: str) -> ManzaResponse:
         return self.http_get(self.encode_path("api/checkout_sessions", id))
 
-    def create(self, **attributes: Any) -> ZazuResponse:
+    def create(self, **attributes: Any) -> ManzaResponse:
         """POST /api/checkout_sessions
 
         Besides the required account_id, amount, success_url and cancel_url,

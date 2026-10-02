@@ -1,11 +1,11 @@
-"""Mirrors lib/zazu/resources/invoices.rb."""
+"""Mirrors lib/manza/resources/invoices.rb."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from ..page import MAX_PER_PAGE, Page
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 from .base import ResourceBase
 
 
@@ -25,31 +25,31 @@ class Invoices(ResourceBase):
             cursor=cursor,
         )
 
-    def get(self, id: str) -> ZazuResponse:
+    def get(self, id: str) -> ManzaResponse:
         return self.http_get(self.encode_path("api/invoices", id))
 
-    def create(self, **attributes: Any) -> ZazuResponse:
+    def create(self, **attributes: Any) -> ManzaResponse:
         return self.http_post("api/invoices", body=attributes)
 
-    def update(self, id: str, **attributes: Any) -> ZazuResponse:
+    def update(self, id: str, **attributes: Any) -> ManzaResponse:
         return self.http_patch(self.encode_path("api/invoices", id), body=attributes)
 
-    def send_invoice(self, id: str) -> ZazuResponse:
+    def send_invoice(self, id: str) -> ManzaResponse:
         return self.http_post(self.encode_path("api/invoices", id, "send"))
 
-    def mark_as_paid(self, id: str) -> ZazuResponse:
+    def mark_as_paid(self, id: str) -> ManzaResponse:
         return self.http_post(self.encode_path("api/invoices", id, "mark_as_paid"))
 
-    def cancel(self, id: str) -> ZazuResponse:
+    def cancel(self, id: str) -> ManzaResponse:
         return self.http_post(self.encode_path("api/invoices", id, "cancel"))
 
-    def credit_note(self, id: str) -> ZazuResponse:
+    def credit_note(self, id: str) -> ManzaResponse:
         return self.http_post(self.encode_path("api/invoices", id, "credit_note"))
 
-    def delete(self, id: str) -> ZazuResponse:
+    def delete(self, id: str) -> ManzaResponse:
         return self.http_delete(self.encode_path("api/invoices", id))
 
-    def create_payment_link(self, invoice_id: str, *, account_id: str) -> ZazuResponse:
+    def create_payment_link(self, invoice_id: str, *, account_id: str) -> ManzaResponse:
         return self.http_post(
             self.encode_path("api/invoices", invoice_id, "payment_link"),
             body={"account_id": account_id},

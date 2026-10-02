@@ -1,4 +1,4 @@
-"""Mirrors lib/zazu/resources/accounts.rb."""
+"""Mirrors lib/manza/resources/accounts.rb."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from ..page import MAX_PER_PAGE, Page
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 from .base import ResourceBase
 
 
@@ -26,7 +26,7 @@ class Accounts(ResourceBase):
             cursor=cursor,
         )
 
-    def get(self, id: str) -> ZazuResponse:
+    def get(self, id: str) -> ManzaResponse:
         return self.http_get(self.encode_path("api/accounts", id))
 
     def list_transactions(
@@ -50,7 +50,7 @@ class Accounts(ResourceBase):
             cursor=cursor,
         )
 
-    def get_transaction(self, account_id: str, transaction_id: str) -> ZazuResponse:
+    def get_transaction(self, account_id: str, transaction_id: str) -> ManzaResponse:
         return self.http_get(
             self.encode_path("api/accounts", account_id, "transactions", transaction_id)
         )

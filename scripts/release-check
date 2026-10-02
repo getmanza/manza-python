@@ -11,7 +11,7 @@ PY=.venv/bin/python
 
 "$PY" -m pip install --quiet --upgrade pip
 "$PY" -m pip install --quiet -e ".[dev]"
-"$PY" scripts/fetch_cassettes.py   # the replay tests need the zazu-ruby cassette tarball, as in CI
+"$PY" scripts/fetch_cassettes.py   # the replay tests need the manza-ruby cassette tarball, as in CI
 "$PY" -m ruff check
 "$PY" -m mypy
 "$PY" -m pytest
