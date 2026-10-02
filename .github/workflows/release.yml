@@ -20,14 +20,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
       - name: Verify tag matches package version
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          tag="${GITHUB_REF#refs/tags/v}"
-          pkg=$(python -c "import tomllib,pathlib; \
-            p=pathlib.Path('pyproject.toml'); \
-            cfg=tomllib.loads(p.read_text()); \
-            print(cfg['project'].get('version') or open('src/zazu_sdk/_version.py').read().split('=')[1].strip().strip('\"'))")
+          tag="${TAG#v}"
+          pkg=$(scripts/version)
           if [[ "$tag" != "$pkg" ]]; then
-            echo "Tag v$tag does not match package version $pkg" >&2
+            echo "::error::Tag v$tag does not match package version $pkg (bin/release writes it via scripts/version)"
             exit 1
           fi
       - name: Build sdist + wheel

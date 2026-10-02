@@ -15,7 +15,7 @@ SDK that records against `staging.zazu.ma`).
 | Lint | ruff | `pyproject.toml` `[tool.ruff]` |
 | Types | mypy strict | `[tool.mypy]` |
 | Build | hatchling | `pyproject.toml` `[build-system]` |
-| Publish | PyPI **OIDC trusted publishing** | `.github/workflows/release.yml` |
+| Release | `bin/release` | zazu SDK release kit (byte-identical across SDK repos; repo-specific bits in `scripts/version` + `scripts/release-check`); PyPI **OIDC trusted publishing** via `.github/workflows/release.yml` |
 
 ## Public API surface
 
@@ -69,11 +69,12 @@ pytest                                      # full suite
 ruff check                                  # lint
 mypy                                        # types
 
-# Release (after PR merge)
-# 1. Bump src/zazu_sdk/_version.py
-# 2. Add CHANGELOG.md entry
-# 3. git tag vX.Y.Z && git push --tags
-#    The release.yml workflow handles PyPI publish via OIDC.
+# Release (after PR merge, from a clean, up-to-date main)
+bin/release list        # last releases + what patch/minor/major would give
+bin/release --dry-run   # version + changes since the last tag, publishes nothing
+bin/release minor       # or patch (default), major, an explicit 0.3.0; --force re-creates
+# → bumps src/zazu_sdk/_version.py, runs scripts/release-check, pushes main, publishes the GH release
+# → release.yml workflow handles PyPI publish via OIDC
 ```
 
 ## Cross-SDK contract

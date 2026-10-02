@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# bin/release adapter: must pass before the version bump is committed.
+# Mirrors .github/workflows/ci.yml (install, fetch cassettes, lint, typecheck, test).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+[ -d .venv ] || python3 -m venv .venv
+# shellcheck disable=SC1091
+. .venv/bin/activate
+
+python -m pip install --quiet --upgrade pip
+pip install --quiet -e ".[dev]"
+python scripts/fetch_cassettes.py   # the replay tests need the zazu-ruby cassette tarball, as in CI
+ruff check
+mypy
+pytest
