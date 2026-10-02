@@ -41,7 +41,7 @@ client.checkout_sessions.get(session_id)
 
 The client picks up `MANZA_API_KEY`, `MANZA_BASE_URL`, `MANZA_API_VERSION`, and
 `MANZA_TIMEOUT` from the environment if you don't pass them. The old `ZAZU_*`
-names still work for all of 1.x and emit a one-time `DeprecationWarning`.
+names still work for all of 1.x and emit a one-time `FutureWarning`.
 
 ### Hosts
 

@@ -23,7 +23,7 @@ def get(name: str) -> str | None:
             warnings.warn(
                 f"{legacy} is deprecated; set MANZA_{name} instead. "
                 "The ZAZU_* fallback will be removed in 2.0.",
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=3,
             )
         return value

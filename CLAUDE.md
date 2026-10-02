@@ -52,7 +52,7 @@ manza.payee_trust_requests.create([external_account_id])
 
 - **Cassettes come from `manza-ruby`'s release tarball.** `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` from the `getmanza/manza-ruby` release pinned in `PINNED_TAG` (currently `v1.0.0`; bump it deliberately). Cassettes are git-ignored.
 - **Cassette replay is request-shape-strict.** The matcher compares method + scheme + host + path + sorted query params. Body match is off by default. The new transfer-authorization, beneficiary and trust-request cassettes opt in per test (`make_client(..., body_match="exact")`; the three authorize cassettes use `"without_signature"`), and request bodies are serialized compactly in recorded key order. Load one cassette per test.
-- **Env vars: `MANZA_*` first, `ZAZU_*` fallback.** `src/manza/_env.py` reads `MANZA_<NAME>`, then the legacy `ZAZU_<NAME>` with a one-time `DeprecationWarning`, for all of 1.x. Fixture vars (`MANZA_FIXTURE_*`) have no fallback.
+- **Env vars: `MANZA_*` first, `ZAZU_*` fallback.** `src/manza/_env.py` reads `MANZA_<NAME>`, then the legacy `ZAZU_<NAME>` with a one-time `FutureWarning`, for all of 1.x. Fixture vars (`MANZA_FIXTURE_*`) have no fallback.
 - **No long-lived PyPI API token.** Releases publish via OIDC trusted publishing through the `pypi` GitHub environment. Verify the binding on https://pypi.org/manage/account/publishing/ if it ever drifts.
 - **Ruby is the canonical surface.** New resources or methods are added to `manza-ruby` first (which records the cassettes), then mirrored here. Don't add a method that has no cassette to back it.
 - **No new error classes without updating other SDKs.** The 10-class hierarchy is shared across SDKs.

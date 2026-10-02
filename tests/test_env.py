@@ -60,7 +60,7 @@ def test_zazu_env_falls_back_with_deprecation_warning(monkeypatch, suffix, value
     if suffix != "API_KEY":
         monkeypatch.setenv("MANZA_API_KEY", "sk_manza")
     monkeypatch.setenv(f"ZAZU_{suffix}", value)
-    with pytest.warns(DeprecationWarning, match=f"ZAZU_{suffix}.*MANZA_{suffix}"):
+    with pytest.warns(FutureWarning, match=f"ZAZU_{suffix}.*MANZA_{suffix}"):
         client = _build()
     assert getattr(client, attr) == expected
 
@@ -76,7 +76,7 @@ def test_manza_wins_over_zazu_without_warning(monkeypatch):
 
 def test_fallback_warns_only_once_per_variable(monkeypatch):
     monkeypatch.setenv("ZAZU_API_KEY", "sk_legacy")
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         _build()
     with warnings.catch_warnings():
         warnings.simplefilter("error")
@@ -87,7 +87,7 @@ def test_fallback_warns_only_once_per_variable(monkeypatch):
 def test_each_legacy_variable_warns_separately(monkeypatch):
     monkeypatch.setenv("ZAZU_API_KEY", "sk_legacy")
     monkeypatch.setenv("ZAZU_BASE_URL", "https://legacy.example")
-    with pytest.warns(DeprecationWarning) as record:
+    with pytest.warns(FutureWarning) as record:
         _build()
     messages = [str(w.message) for w in record]
     assert any("ZAZU_API_KEY" in m for m in messages)

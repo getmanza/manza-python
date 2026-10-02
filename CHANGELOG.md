@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - `ZAZU_API_KEY`, `ZAZU_BASE_URL`, `ZAZU_API_VERSION` and `ZAZU_TIMEOUT` still
   work for all of 1.x. `MANZA_*` wins when both are set; the legacy name emits
-  one `DeprecationWarning` per variable per process.
+  one `FutureWarning` per variable per process.
 
 ### Migrating from `zazu-sdk` 0.x
 
