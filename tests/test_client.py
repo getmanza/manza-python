@@ -64,7 +64,7 @@ def _client_with_response(
 
     return Manza(
         api_key="sk_test",
-        base_url="https://manza.ma",
+        base_url="https://api.manza.example",
         http_client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
 
