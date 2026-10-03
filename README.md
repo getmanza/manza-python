@@ -150,7 +150,21 @@ except ManzaRateLimitError as err:
 `manza` is one of several Manza SDKs that all replay cassettes recorded by
 the canonical [`manza-ruby`](https://github.com/getmanza/manza-ruby) SDK against
 staging (`ma.manza.dev`). The wire format is snake_case JSON; request and response shapes match
-across Ruby, TypeScript, Python, Go, and Rust.
+across every Manza SDK.
+
+## The SDK family
+
+| SDK | Repository | Install |
+|---|---|---|
+| Ruby (reference implementation, records the cassettes) | [getmanza/manza-ruby](https://github.com/getmanza/manza-ruby) | `gem "manza"` |
+| TypeScript / JavaScript | [getmanza/manza-ts](https://github.com/getmanza/manza-ts) | `npm install @getmanza/sdk` |
+| Python | [getmanza/manza-python](https://github.com/getmanza/manza-python) (this repo) | `pip install manza` |
+| Go | [getmanza/manza-go](https://github.com/getmanza/manza-go) | `go get github.com/getmanza/manza-go` |
+| PHP | [getmanza/manza-php](https://github.com/getmanza/manza-php) | `composer require manza/manza-php` |
+| Rust | [getmanza/manza-rust](https://github.com/getmanza/manza-rust) | `cargo add manza` |
+| Crystal | [getmanza/manza-crystal](https://github.com/getmanza/manza-crystal) | shard `manza` (`github: getmanza/manza-crystal`) |
+| Elixir | [getmanza/manza-elixir](https://github.com/getmanza/manza-elixir) | `{:manza, "~> 1.0"}` |
+| CLI | [getmanza/cli](https://github.com/getmanza/cli) | `npm install -g @getzazu/cli` or `brew install getzazu/tap/zazu` |
 
 ## License
 
