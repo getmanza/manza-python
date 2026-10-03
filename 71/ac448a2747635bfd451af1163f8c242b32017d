@@ -1,0 +1,19 @@
+tests/test_env.py
+  s_ada779640f2b0d::t_52e95b73b9158f 77-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "71ac448a2747635bfd451af1163f8c242b32017d",
+  "prompts": {},
+  "sessions": {
+    "s_ada779640f2b0d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a25dcf10-c781-45fb-9748-36e2349c3a2e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "mhenrixon <mikael@mhenrixon.com>"
+    }
+  }
+}
