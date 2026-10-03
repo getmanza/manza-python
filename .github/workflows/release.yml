@@ -51,6 +51,9 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: true
+          # A re-run (or a bin/release --force re-cut) of a version already on
+          # PyPI skips the upload instead of failing.
+          skip-existing: true
 
   github-release:
     needs: publish
@@ -66,8 +69,14 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # bin/release creates the release (and the tag) itself; attach the
+        # built dists to it. Only a tag pushed by hand gets a new release here.
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          gh release create "$tag" dist/* \
-            --title "$tag" \
-            --notes "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md)."
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          else
+            gh release create "$tag" dist/* \
+              --title "$tag" \
+              --notes "See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/CHANGELOG.md)."
+          fi
