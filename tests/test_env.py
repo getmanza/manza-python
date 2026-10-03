@@ -9,7 +9,6 @@ import pytest
 
 from manza import Manza, ManzaConfigurationError, _env
 from manza._version import __version__
-from manza.client import USER_AGENT
 
 ENV_NAMES = [
     "API_KEY",
@@ -108,7 +107,6 @@ def test_missing_key_error_names_manza_env(monkeypatch):
 
 
 def test_user_agent_and_version_header():
-    assert f"manza-python/{__version__}" == USER_AGENT
     seen: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -123,4 +121,4 @@ def test_user_agent_and_version_header():
     client.request("GET", "/entity")
     assert seen["manza-version"] == "2026-01-01"
     assert "zazu-version" not in seen
-    assert seen["user-agent"] == USER_AGENT
+    assert seen["user-agent"] == f"manza-python/{__version__}"

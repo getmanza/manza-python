@@ -5,9 +5,11 @@ The legacy name still works for all of 1.x and warns once per variable."""
 from __future__ import annotations
 
 import os
+import threading
 import warnings
 
 _warned: set[str] = set()
+_lock = threading.Lock()
 
 
 def get(name: str) -> str | None:
@@ -18,8 +20,10 @@ def get(name: str) -> str | None:
     legacy = f"ZAZU_{name}"
     value = os.getenv(legacy)
     if value:
-        if legacy not in _warned:
+        with _lock:
+            first = legacy not in _warned
             _warned.add(legacy)
+        if first:
             warnings.warn(
                 f"{legacy} is deprecated; set MANZA_{name} instead. "
                 "The ZAZU_* fallback will be removed in 2.0.",

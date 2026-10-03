@@ -21,6 +21,7 @@ from manza import (
 
 def test_missing_api_key_raises_configuration_error(monkeypatch):
     monkeypatch.delenv("MANZA_API_KEY", raising=False)
+    monkeypatch.delenv("ZAZU_API_KEY", raising=False)
     with pytest.raises(ManzaConfigurationError):
         Manza()
 
