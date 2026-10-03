@@ -1,4 +1,4 @@
-"""Mirrors lib/zazu/resources/beneficiaries.rb.
+"""Mirrors lib/manza/resources/beneficiaries.rb.
 
 Saved transfer recipients. Each beneficiary embeds its bank accounts; the one
 flagged ``default`` is used when a transfer names only the beneficiary_id.
@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..page import MAX_PER_PAGE, Page
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 from .base import ResourceBase
 
 
@@ -18,10 +18,10 @@ class Beneficiaries(ResourceBase):
     def list(self, *, limit: int = MAX_PER_PAGE, cursor: str | None = None) -> Page[Any]:
         return self.list_page("api/beneficiaries", {}, limit=limit, cursor=cursor)
 
-    def get(self, id: str) -> ZazuResponse:
+    def get(self, id: str) -> ManzaResponse:
         return self.http_get(self.encode_path("api/beneficiaries", id))
 
-    def create(self, **attributes: Any) -> ZazuResponse:
+    def create(self, **attributes: Any) -> ManzaResponse:
         """POST /api/beneficiaries
 
         Keys: beneficiary_type ("individual" | "business"; inferred from
@@ -42,13 +42,13 @@ class Beneficiaries(ResourceBase):
             cursor=cursor,
         )
 
-    def get_external_account(self, beneficiary_id: str, id: str) -> ZazuResponse:
+    def get_external_account(self, beneficiary_id: str, id: str) -> ManzaResponse:
         """GET /api/beneficiaries/:beneficiary_id/external_accounts/:id"""
         return self.http_get(
             self.encode_path("api/beneficiaries", beneficiary_id, "external_accounts", id)
         )
 
-    def create_external_account(self, beneficiary_id: str, **attributes: Any) -> ZazuResponse:
+    def create_external_account(self, beneficiary_id: str, **attributes: Any) -> ManzaResponse:
         """POST /api/beneficiaries/:beneficiary_id/external_accounts
 
         Required: account_number. Optional: name, country_code, currency_code,

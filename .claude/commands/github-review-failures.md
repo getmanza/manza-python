@@ -28,8 +28,8 @@ gh run view <run-id> --log-failed
 Categorize:
 - **Test failures** — assertion failed, `filterwarnings = error` turned a warning into an error
 - **Lint failures** — ruff rule violation, unsorted imports, unused imports
-- **Typecheck failures** — `mypy` strict errors in `src/zazu_sdk`
-- **Cassette fetch failures** — `python scripts/fetch_cassettes.py` could not resolve or download the zazu-ruby tarball
+- **Typecheck failures** — `mypy` strict errors in `src/manza`
+- **Cassette fetch failures** — `python scripts/fetch_cassettes.py` could not resolve or download the manza-ruby tarball
 - **Cassette replay failures** — `AssertionError: No cassette interaction matched ...` from `tests/cassette_replay.py`
 - **Toolchain install failures** — `pip install -e ".[dev]"` failed on one Python version
 - **Release / publish failures** — tag != package version, PyPI trusted-publishing OIDC binding
@@ -64,11 +64,11 @@ ruff check && mypy && pytest
 If you can't reproduce locally, the failure is environmental (CI-only):
 - Different Python version → CI runs 3.11, 3.12 and 3.13; reproduce with that interpreter (`python3.11 -m venv .venv`)
 - Missing dependency → did `pip install -e ".[dev]"` run before the failing step?
-- Stale cassettes → your local `tests/fixtures/cassettes/` came from an older zazu-ruby release; re-run `python scripts/fetch_cassettes.py`
+- Stale cassettes → your local `tests/fixtures/cassettes/` came from an older manza-ruby release; re-run `python scripts/fetch_cassettes.py`
 - Network → github.com hiccup while fetching the cassette tarball (the script already retries 8 times)
 - Secret missing → e.g. trusted-publishing OIDC environment `pypi` not configured
 
-Never call a live Zazu/Manza API to reproduce a failure. Cassettes are the only source of responses here, and only zazu-ruby records them.
+Never call a live Manza API to reproduce a failure. Cassettes are the only source of responses here, and only manza-ruby records them.
 
 ### Find the root cause
 
@@ -144,16 +144,16 @@ If the failure was CI-config drift (workflow YAML out of sync with reality), als
 
 ### `No cassette interaction matched <METHOD> <URL>`
 
-The request the SDK sent no longer matches what zazu-ruby recorded. Check, in order:
+The request the SDK sent no longer matches what manza-ruby recorded. Check, in order:
 - The test loads more than one cassette that shares method + URI (`transfer_drafts/authorize` vs `authorize_same_key`, `create` vs `create_duplicate`): load one cassette per test.
-- The cassettes are stale: `python scripts/fetch_cassettes.py` (newest zazu-ruby `v*` release).
+- The cassettes are stale: `python scripts/fetch_cassettes.py` (the manza-ruby release pinned in `PINNED_TAG`).
 - Path, query or host drifted: replay URIs use `https://ma.manza.dev`; query params match sorted.
-- A body-matched test (`body_match="exact"` or `"without_signature"`) sends a different body: request bodies are compact JSON in recorded key order (byte-identical to zazu-ruby's `JSON.generate`). Fix the SDK, not the cassette.
-- A genuinely new request shape means a coordinated change: re-record in zazu-ruby and ship a new release first.
+- A body-matched test (`body_match="exact"` or `"without_signature"`) sends a different body: request bodies are compact JSON in recorded key order (byte-identical to manza-ruby's `JSON.generate`). Fix the SDK, not the cassette.
+- A genuinely new request shape means a coordinated change: re-record in manza-ruby and ship a new release first.
 
 ### `fetch_cassettes.py` fails or finds no tag
 
-It resolves the newest `v*` tag with `git ls-remote` against `REPO` in the script (currently still `getzazu/zazu-ruby`, which GitHub redirects to `getmanza`) and downloads `cassettes-vX.Y.Z.tar.gz` from that release. A transient 503 is retried up to 8 times. If the tarball is missing for the newest tag, zazu-ruby's release workflow did not finish: pass an older tag explicitly (`python scripts/fetch_cassettes.py v0.3.0`) only to unblock, then fix forward.
+It downloads `cassettes-<PINNED_TAG>.tar.gz` from the `REPO` release (`getmanza/manza-ruby`), or the tag passed as an argument. A transient 503 is retried up to 8 times. If the tarball is missing, manza-ruby's release workflow did not finish for that tag: pass another tag explicitly only to unblock, then fix forward.
 
 ### `ruff` or `mypy` fails only on one Python version
 
@@ -161,11 +161,11 @@ CI runs 3.11, 3.12 and 3.13 with `fail-fast: false`. Reproduce with that interpr
 
 ### Release workflow: `Tag vX.Y.Z does not match package version`
 
-`release.yml` gates on tag == `scripts/version`. `bin/release` writes the version through `scripts/version`; don't tag by hand or edit `src/zazu_sdk/_version.py` separately.
+`release.yml` gates on tag == `scripts/version`. `bin/release` writes the version through `scripts/version`; don't tag by hand or edit `src/manza/_version.py` separately.
 
 ### Trusted publishing rejected by PyPI
 
-The trusted-publisher binding on PyPI must match `(repo getmanza/zazu-python, workflow release.yml, environment pypi)` exactly. Check https://pypi.org/manage/project/zazu-sdk/settings/publishing/.
+The trusted-publisher binding on PyPI must match `(repo getmanza/manza-python, workflow release.yml, environment pypi)` exactly. Check https://pypi.org/manage/project/manza/settings/publishing/.
 
 ## Karpathy guidelines
 

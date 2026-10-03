@@ -62,7 +62,7 @@ Create a test that demonstrates the expected behavior. Confirm it fails for the 
 pytest tests/resources/test_<resource>.py
 ```
 
-Replay tests load their cassette through `make_client([...])` (`tests/conftest.py`) and take IDs from `FIXTURE_IDS` (`tests/fixture_ids.py`). Cassettes come from zazu-ruby's release tarball (`python scripts/fetch_cassettes.py`). **Never call a live Zazu/Manza API** from a test, a script or this session: live staging calls create real transfers and approval requests for the team, and only zazu-ruby records cassettes. A new method without a cassette in zazu-ruby's latest release is not shippable here: add it to zazu-ruby first.
+Replay tests load their cassette through `make_client([...])` (`tests/conftest.py`) and take IDs from `FIXTURE_IDS` (`tests/fixture_ids.py`). Cassettes come from manza-ruby's release tarball (`python scripts/fetch_cassettes.py`). **Never call a live Manza API** from a test, a script or this session: live staging calls create real transfers and approval requests for the team, and only manza-ruby records cassettes. A new method without a cassette in manza-ruby's latest release is not shippable here: add it to manza-ruby first.
 
 ### 4.2 Minimum implementation
 
@@ -70,17 +70,17 @@ Project conventions:
 
 | Use | Instead of |
 |-----|-----------|
-| `Zazu` client (`Zazu(api_key=...)`) and `Zazu.request` | hand-rolled `httpx` calls |
+| `Manza` client (`Manza(api_key=...)`) and `Manza.request` | hand-rolled `httpx` calls |
 | `ResourceBase.http_get/post/patch/delete`, `list_page` | calling `client.request` ad hoc from a resource |
 | `ResourceBase.encode_path(base, *segments)` | f-string URLs |
 | `Page[T]` from the SDK (`auto_paging_iter()`) | manual cursor loop |
-| `isinstance(err, ZazuValidationError)` etc. | status-code switching, parsing `err.message` |
-| `zazu_sdk.transfer_authorization` signer, built from your own record | signing the server's `signature_input` |
+| `isinstance(err, ManzaValidationError)` etc. | status-code switching, parsing `err.message` |
+| `manza.transfer_authorization` signer, built from your own record | signing the server's `signature_input` |
 | snake_case for wire-format bodies | auto-camelCasing |
 | `pytest` | unittest, nose |
 | `ruff check` + `mypy` | flake8, pyright |
 | Cassette replay via `make_client([...])` (`tests/cassette_replay.py`) | mocking `httpx` per test |
-| `FIXTURE_IDS[...]` from `tests/fixture_ids.py` (identical to zazu-ruby's) | hard-coded IDs |
+| `FIXTURE_IDS[...]` from `tests/fixture_ids.py` (identical to manza-ruby's) | hard-coded IDs |
 | One cassette per test; `body_match="exact"` / `"without_signature"` only where the contract needs it | loading cassettes that share method + URI together |
 
 ### 4.3 Refactor
@@ -91,7 +91,7 @@ Once green, refactor with tests still passing.
 
 ```bash
 ruff check          # lint
-mypy                # strict types (src/zazu_sdk)
+mypy                # strict types (src/manza)
 pytest              # full suite
 ```
 
@@ -189,8 +189,8 @@ If you typed `` \` `` anywhere in the body, delete the backslash. The single-quo
 - [ ] `mypy` passes.
 - [ ] `pytest` passes.
 - [ ] No hand-rolled HTTP — uses the SDK.
-- [ ] No live Zazu/Manza API call was made; tests replay cassettes only.
-- [ ] `tests/fixture_ids.py` still identical to zazu-ruby's `spec/support/fixture_ids.rb` (if touched).
+- [ ] No live Manza API call was made; tests replay cassettes only.
+- [ ] `tests/fixture_ids.py` still identical to manza-ruby's `spec/support/fixture_ids.rb` (if touched).
 - [ ] `fable-validator` verdict is PASS or PASS WITH NOTES (Phase 6.5), and it is in the PR body.
 - [ ] Accepted risks (if any) are listed in the PR body.
 - [ ] PR created with description.

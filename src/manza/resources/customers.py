@@ -1,11 +1,11 @@
-"""Mirrors lib/zazu/resources/customers.rb."""
+"""Mirrors lib/manza/resources/customers.rb."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from ..page import MAX_PER_PAGE, Page
-from ..response import ZazuResponse
+from ..response import ManzaResponse
 from .base import ResourceBase
 
 
@@ -19,10 +19,10 @@ class Customers(ResourceBase):
     ) -> Page[Any]:
         return self.list_page("api/customers", {"q": q}, limit=limit, cursor=cursor)
 
-    def get(self, id: str) -> ZazuResponse:
+    def get(self, id: str) -> ManzaResponse:
         return self.http_get(self.encode_path("api/customers", id))
 
-    def create(self, **attributes: Any) -> ZazuResponse:
+    def create(self, **attributes: Any) -> ManzaResponse:
         """POST /api/customers
 
         Accepts registration_number and vat_number. ``tax_id`` and ``ice_number``
@@ -31,8 +31,8 @@ class Customers(ResourceBase):
         """
         return self.http_post("api/customers", body=attributes)
 
-    def update(self, id: str, **attributes: Any) -> ZazuResponse:
+    def update(self, id: str, **attributes: Any) -> ManzaResponse:
         return self.http_patch(self.encode_path("api/customers", id), body=attributes)
 
-    def delete(self, id: str) -> ZazuResponse:
+    def delete(self, id: str) -> ManzaResponse:
         return self.http_delete(self.encode_path("api/customers", id))

@@ -118,9 +118,9 @@ gh api repos/{owner}/{repo}/pulls/<PR>/comments \
 CodeRabbit doesn't know:
 - The Karpathy guidelines we follow (no speculative abstractions, surgical changes).
 - Our snake_case wire format decision — it sometimes suggests camelCasing.
-- That zazu-ruby is the canonical implementation and this SDK mirrors it — sometimes it suggests "improvements" that diverge from Ruby.
+- That manza-ruby is the canonical implementation and this SDK mirrors it — sometimes it suggests "improvements" that diverge from Ruby.
 - The cassette-replay contract — it might suggest mocking `httpx` or loading several cassettes at once, which breaks parity with the Ruby SDK.
-- That a live Zazu/Manza API call is never acceptable here — it might suggest a smoke test against staging.
+- That a live Manza API call is never acceptable here — it might suggest a smoke test against staging.
 
 When CodeRabbit suggests something that would violate one of these, push back with a one-line explanation. Don't capitulate to keep the PR quiet.
 

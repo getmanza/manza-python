@@ -1,26 +1,26 @@
-"""Mirrors lib/zazu/client.rb. Sync HTTP entry point built on httpx."""
+"""Mirrors lib/manza/client.rb. Sync HTTP entry point built on httpx."""
 
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 from urllib.parse import urlencode
 
 import httpx
 
+from . import _env
 from ._version import __version__
 from .errors import (
-    ZazuAuthenticationError,
-    ZazuConfigurationError,
-    ZazuConflictError,
-    ZazuConnectionError,
-    ZazuError,
-    ZazuForbiddenError,
-    ZazuNotFoundError,
-    ZazuRateLimitError,
-    ZazuServerError,
-    ZazuValidationError,
+    ManzaAuthenticationError,
+    ManzaConfigurationError,
+    ManzaConflictError,
+    ManzaConnectionError,
+    ManzaError,
+    ManzaForbiddenError,
+    ManzaNotFoundError,
+    ManzaRateLimitError,
+    ManzaServerError,
+    ManzaValidationError,
 )
 from .page import MAX_PER_PAGE, Page
 from .resources.accounts import Accounts
@@ -33,16 +33,16 @@ from .resources.payee_trust_requests import PayeeTrustRequests
 from .resources.payment_links import PaymentLinks
 from .resources.transfer_drafts import TransferDrafts
 from .resources.webhook_endpoints import WebhookEndpoints
-from .response import ZazuResponse
+from .response import ManzaResponse
 
 # Morocco production. South Africa is https://za.manza.finance.
 DEFAULT_BASE_URL = "https://ma.manza.finance"
 DEFAULT_TIMEOUT = 30.0
-USER_AGENT = f"zazu-sdk/{__version__}"
+USER_AGENT = f"manza-python/{__version__}"
 
 
-class Zazu:
-    """Top-level Zazu client. Resources hang off it as attributes."""
+class Manza:
+    """Top-level Manza client. Resources hang off it as attributes."""
 
     def __init__(
         self,
@@ -53,16 +53,16 @@ class Zazu:
         timeout: float | None = None,
         http_client: httpx.Client | None = None,
     ) -> None:
-        api_key = api_key or os.getenv("ZAZU_API_KEY")
+        api_key = api_key or _env.get("API_KEY")
         if not api_key:
-            raise ZazuConfigurationError(
-                "Missing api_key. Pass api_key= or set ZAZU_API_KEY."
+            raise ManzaConfigurationError(
+                "Missing api_key. Pass api_key= or set MANZA_API_KEY."
             )
         self.api_key = api_key
-        self.base_url = (base_url or os.getenv("ZAZU_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
-        self.api_version = api_version or os.getenv("ZAZU_API_VERSION")
+        self.base_url = (base_url or _env.get("BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+        self.api_version = api_version or _env.get("API_VERSION")
         self.timeout = (
-            timeout if timeout is not None else _env_float("ZAZU_TIMEOUT", DEFAULT_TIMEOUT)
+            timeout if timeout is not None else _env_float("TIMEOUT", DEFAULT_TIMEOUT)
         )
         self._owns_client = http_client is None
         self._http = http_client or httpx.Client(timeout=self.timeout)
@@ -78,7 +78,7 @@ class Zazu:
         self.transfer_drafts = TransferDrafts(self)
         self.webhook_endpoints = WebhookEndpoints(self)
 
-    def __enter__(self) -> Zazu:
+    def __enter__(self) -> Manza:
         return self
 
     def __exit__(self, *exc: Any) -> None:
@@ -96,7 +96,7 @@ class Zazu:
         params: dict[str, Any] | None = None,
         body: Any = None,
         headers: dict[str, str] | None = None,
-    ) -> ZazuResponse:
+    ) -> ManzaResponse:
         url = self._build_url(path, params)
         request_headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -104,14 +104,14 @@ class Zazu:
             "Accept": "application/json",
         }
         if self.api_version:
-            request_headers["Zazu-Version"] = self.api_version
+            request_headers["Manza-Version"] = self.api_version
         if headers:
             request_headers.update(headers)
 
         request_kwargs: dict[str, Any] = {"headers": request_headers}
         if body is not None:
             request_headers["Content-Type"] = "application/json"
-            # Compact, raw UTF-8: byte-identical to zazu-ruby's JSON.generate.
+            # Compact, raw UTF-8: byte-identical to manza-ruby's JSON.generate.
             request_kwargs["content"] = json.dumps(
                 body, separators=(",", ":"), ensure_ascii=False
             ).encode()
@@ -119,12 +119,12 @@ class Zazu:
         try:
             raw = self._http.request(method.upper(), url, **request_kwargs)
         except httpx.TimeoutException as err:
-            raise ZazuConnectionError(f"Request timed out after {self.timeout}s") from err
+            raise ManzaConnectionError(f"Request timed out after {self.timeout}s") from err
         except httpx.HTTPError as err:
-            raise ZazuConnectionError(f"Connection failed: {err}") from err
+            raise ManzaConnectionError(f"Connection failed: {err}") from err
 
         parsed = _parse_body(raw)
-        response = ZazuResponse(raw, parsed)
+        response = ManzaResponse(raw, parsed)
         if response.success:
             return response
         raise _build_error(response)
@@ -140,7 +140,7 @@ class Zazu:
 
 
 def _env_float(name: str, default: float) -> float:
-    raw = os.getenv(name)
+    raw = _env.get(name)
     if not raw:
         return default
     try:
@@ -169,7 +169,7 @@ def _error_payload(body: Any) -> dict[str, Any]:
     return err if isinstance(err, dict) else {}
 
 
-def _build_error(response: ZazuResponse) -> ZazuError:
+def _build_error(response: ManzaResponse) -> ManzaError:
     payload = _error_payload(response.body)
     message = payload.get("message")
     opts: dict[str, Any] = {
@@ -183,17 +183,17 @@ def _build_error(response: ZazuResponse) -> ZazuError:
 
     status = response.status
     if status == 401:
-        return ZazuAuthenticationError(message or "Authentication failed", **opts)
+        return ManzaAuthenticationError(message or "Authentication failed", **opts)
     if status == 403:
-        return ZazuForbiddenError(message or "Forbidden", **opts)
+        return ManzaForbiddenError(message or "Forbidden", **opts)
     if status == 404:
-        return ZazuNotFoundError(message or "Not found", **opts)
+        return ManzaNotFoundError(message or "Not found", **opts)
     if status == 400:
-        return ZazuValidationError(message or "Bad request", **opts)
+        return ManzaValidationError(message or "Bad request", **opts)
     if status == 422:
-        return ZazuValidationError(message or "Validation failed", **opts)
+        return ManzaValidationError(message or "Validation failed", **opts)
     if status == 409:
-        return ZazuConflictError(
+        return ManzaConflictError(
             message or "Conflict", payment_id=payload.get("payment_id"), **opts
         )
     if status == 429:
@@ -202,12 +202,12 @@ def _build_error(response: ZazuResponse) -> ZazuError:
             retry_after_int = int(retry_after) if retry_after else None
         except ValueError:
             retry_after_int = None
-        return ZazuRateLimitError(
+        return ManzaRateLimitError(
             message or "Rate limited", retry_after=retry_after_int, **opts
         )
     if 500 <= status < 600:
-        return ZazuServerError(message or f"Server error ({status})", **opts)
-    return ZazuError(message or f"Unexpected status {status}", **opts)
+        return ManzaServerError(message or f"Server error ({status})", **opts)
+    return ManzaError(message or f"Unexpected status {status}", **opts)
 
 
-__all__ = ["MAX_PER_PAGE", "Page", "Zazu"]
+__all__ = ["MAX_PER_PAGE", "Manza", "Page"]

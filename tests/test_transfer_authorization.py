@@ -1,5 +1,5 @@
 """Fixed test vector, shared by every SDK in the family (see
-spec/zazu/transfer_authorization_spec.rb in zazu-ruby). Each SDK's signer must
+spec/manza/transfer_authorization_spec.rb in manza-ruby). Each SDK's signer must
 produce exactly these hex digests from these inputs. The digests were computed
 independently with:
 
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from zazu_sdk import ZazuArgumentError, transfer_authorization
+from manza import ManzaArgumentError, transfer_authorization
 
 SECRET = "whsec_test_vector_secret"
 FIELDS = {
@@ -54,15 +54,15 @@ def test_own_account_payee_without_client_reference():
 
 def test_signature_input_refuses_a_non_string_amount():
     fields = {**FIELDS, "amount": 2500}
-    with pytest.raises(ZazuArgumentError, match="amount"):
+    with pytest.raises(ManzaArgumentError, match="amount"):
         transfer_authorization.signature_input(**fields, payee="ext:x")
 
 
 def test_payee_for_refuses_both_ids():
-    with pytest.raises(ZazuArgumentError):
+    with pytest.raises(ManzaArgumentError):
         transfer_authorization.payee_for(external_account_id="a", destination_account_id="b")
 
 
 def test_payee_for_refuses_neither_id():
-    with pytest.raises(ZazuArgumentError):
+    with pytest.raises(ManzaArgumentError):
         transfer_authorization.payee_for()

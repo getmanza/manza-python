@@ -36,7 +36,7 @@ For each failing check:
    - Disable the failing test
    - Add a `# noqa` to silence the linter
    - Add a `# type: ignore` or `cast` to bypass the typechecker
-   - Call a live Zazu/Manza API to "check" a cassette (only zazu-ruby records)
+   - Call a live Manza API to "check" a cassette (only manza-ruby records)
 4. Verify locally: `ruff check && mypy && pytest`
 5. Commit with conventional-commit prefix (`fix:`, `test:`, `chore:`)
 6. Push: `git push origin <branch>`

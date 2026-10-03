@@ -1,11 +1,11 @@
-"""Mirrors lib/zazu/errors.rb. Ten-class hierarchy shared across SDKs."""
+"""Mirrors lib/manza/errors.rb. Ten-class hierarchy shared across SDKs."""
 
 from __future__ import annotations
 
 from typing import Any
 
 
-class ZazuError(Exception):
+class ManzaError(Exception):
     """Base class for every error raised by the SDK."""
 
     def __init__(
@@ -29,38 +29,38 @@ class ZazuError(Exception):
         self.headers = headers
 
 
-class ZazuArgumentError(ZazuError):
+class ManzaArgumentError(ManzaError):
     """Caller passed bad arguments before any HTTP request was made."""
 
 
-class ZazuConfigurationError(ZazuError):
+class ManzaConfigurationError(ManzaError):
     """Missing or invalid client configuration (e.g. no API key)."""
 
 
-class ZazuConnectionError(ZazuError):
+class ManzaConnectionError(ManzaError):
     """The HTTP request failed before getting a response (timeout, DNS, refused)."""
 
 
-class ZazuAuthenticationError(ZazuError):
+class ManzaAuthenticationError(ManzaError):
     """HTTP 401."""
 
 
-class ZazuForbiddenError(ZazuError):
+class ManzaForbiddenError(ManzaError):
     """HTTP 403."""
 
 
-class ZazuNotFoundError(ZazuError):
+class ManzaNotFoundError(ManzaError):
     """HTTP 404."""
 
 
-class ZazuValidationError(ZazuError):
+class ManzaValidationError(ManzaError):
     """HTTP 400 (malformed request, e.g. a bad `limit`/`cursor`) or 422 (rejected body).
 
     `param` carries the offending field name when the API supplies it.
     """
 
 
-class ZazuConflictError(ZazuError):
+class ManzaConflictError(ManzaError):
     """HTTP 409. The request conflicts with an existing resource.
 
     For a duplicate `client_reference` on a transfer draft (`type` is
@@ -72,7 +72,7 @@ class ZazuConflictError(ZazuError):
         self.payment_id = payment_id
 
 
-class ZazuRateLimitError(ZazuError):
+class ManzaRateLimitError(ManzaError):
     """HTTP 429. `retry_after` is the value of the Retry-After header in seconds, if present."""
 
     def __init__(self, message: str, *, retry_after: int | None = None, **kwargs: Any) -> None:
@@ -80,5 +80,5 @@ class ZazuRateLimitError(ZazuError):
         self.retry_after = retry_after
 
 
-class ZazuServerError(ZazuError):
+class ManzaServerError(ManzaError):
     """HTTP 5xx."""
