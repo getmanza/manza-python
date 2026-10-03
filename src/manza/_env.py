@@ -15,7 +15,7 @@ _lock = threading.Lock()
 def get(name: str) -> str | None:
     """Return `MANZA_<name>`, else `ZAZU_<name>` (warning once), else None."""
     value = os.getenv(f"MANZA_{name}")
-    if value:
+    if value is not None:
         return value
     legacy = f"ZAZU_{name}"
     value = os.getenv(legacy)

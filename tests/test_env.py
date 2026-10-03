@@ -9,6 +9,7 @@ import pytest
 
 from manza import Manza, ManzaConfigurationError, _env
 from manza._version import __version__
+from manza.client import DEFAULT_BASE_URL
 
 ENV_NAMES = [
     "API_KEY",
@@ -71,6 +72,16 @@ def test_manza_wins_over_zazu_without_warning(monkeypatch):
         warnings.simplefilter("error")
         client = _build()
     assert client.api_key == "sk_new"
+
+
+def test_empty_manza_var_does_not_fall_back_to_zazu(monkeypatch):
+    monkeypatch.setenv("MANZA_API_KEY", "sk_new")
+    monkeypatch.setenv("MANZA_BASE_URL", "")
+    monkeypatch.setenv("ZAZU_BASE_URL", "https://stale.test")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        client = _build()
+    assert client.base_url == DEFAULT_BASE_URL
 
 
 def test_fallback_warns_only_once_per_variable(monkeypatch):
