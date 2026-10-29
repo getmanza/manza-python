@@ -260,10 +260,14 @@ class App:
                 attempt += 1
 
 
-def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
-    """An ``http.server`` request handler that feeds every POST to ``app``."""
+def make_handler(app: App, *, read_timeout: float = 10) -> type[BaseHTTPRequestHandler]:
+    """An ``http.server`` request handler that feeds every POST to ``app``.
+    A client silent for ``read_timeout`` seconds is dropped, so a stalled
+    request never parks a thread."""
 
     class Handler(BaseHTTPRequestHandler):
+        timeout = read_timeout
+
         def do_POST(self) -> None:
             try:
                 length = int(self.headers.get("Content-Length") or 0)

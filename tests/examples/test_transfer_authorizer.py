@@ -11,6 +11,7 @@ import copy
 import http.client
 import json
 import logging
+import socket
 import threading
 import time
 import urllib.error
@@ -353,7 +354,8 @@ def test_another_event_answers_200_and_calls_nothing(api, ledger, log):
 
 @pytest.fixture
 def server(api: FakeApi, ledger: Ledger) -> Iterator[str]:
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(build_app(api, ledger)))
+    handler = make_handler(build_app(api, ledger), read_timeout=0.5)
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=httpd.serve_forever)
     thread.start()
     try:
@@ -401,4 +403,12 @@ def test_the_http_server_answers_400_to_a_content_length_that_is_not_a_size(serv
         assert (response.status, response.read()) == (400, b"bad request")
     finally:
         connection.close()
+    assert api.requests == []
+
+
+def test_the_http_server_drops_a_client_that_stalls_mid_body(server, api):
+    url = urlsplit(server)
+    with socket.create_connection((url.hostname, url.port), timeout=5) as client:
+        client.sendall(b"POST / HTTP/1.1\r\nHost: x\r\nContent-Length: 100\r\n\r\n{}")
+        assert client.recv(1024) == b""  # closed after read_timeout, not after 5 s
     assert api.requests == []
