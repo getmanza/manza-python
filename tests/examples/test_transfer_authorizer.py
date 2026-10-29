@@ -389,7 +389,7 @@ def test_the_http_server_passes_the_raw_body_and_headers_to_the_app(server, api)
     assert api.requests == []
 
 
-@pytest.mark.parametrize("length", ["lots", "-5", "-1"])
+@pytest.mark.parametrize("length", ["lots", "-5", "-1", str(10**12), "9" * 20])
 def test_the_http_server_answers_400_to_a_content_length_that_is_not_a_size(server, api, length):
     url = urlsplit(server)
     connection = http.client.HTTPConnection(url.hostname, url.port, timeout=5)

@@ -63,6 +63,7 @@ TRANSIENT_ERRORS = (ManzaServerError, ManzaConnectionError, ManzaRateLimitError)
 BUSY = "authorization_busy"
 ATTEMPTS = 3
 MAX_RETRY_AFTER = 30  # seconds; a challenge expires, so never park the thread for long
+MAX_BODY_BYTES = 1_000_000
 
 Executor = Callable[[Callable[[], None]], Any]
 
@@ -268,7 +269,8 @@ def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
                 length = int(self.headers.get("Content-Length") or 0)
             except ValueError:
                 length = -1
-            if length < 0:  # read(-1) would wait for the client to hang up
+            # read(-1) would wait for the client to hang up; a webhook is a few KB.
+            if not 0 <= length <= MAX_BODY_BYTES:
                 self._respond(400, b"bad request")
                 return
             status = app.handle(self.rfile.read(length), self.headers)
