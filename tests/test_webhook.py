@@ -119,7 +119,8 @@ def test_verify_rejects_an_empty_secret_even_with_a_signature_made_under_it():
 
 
 def test_verify_rejects_a_non_string_payload():
-    assert verify(payload=42) is False
+    forged = signed_headers(42)["X-Manza-Signature"]
+    assert verify(payload=42, signature=forged) is False
 
 
 # construct_event
@@ -229,9 +230,8 @@ def test_construct_event_raises_on_a_signed_body_that_is_not_utf8():
 
 
 def test_construct_event_raises_argument_error_not_type_error_on_a_non_string_payload():
-    headers = {"X-Manza-Signature": SIGNATURE, "X-Manza-Timestamp": TIMESTAMP}
     with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
-        construct(headers, payload=42)
+        construct(signed_headers(42), payload=42)
 
 
 def test_construct_event_raises_on_an_empty_secret():
