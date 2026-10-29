@@ -238,6 +238,14 @@ def test_construct_event_raises_on_a_signed_body_that_is_not_utf8():
         construct(signed_headers(body), payload=body)
 
 
+def test_construct_event_raises_argument_error_on_json_nested_past_the_recursion_limit():
+    # Before 3.15 json.loads raises RecursionError here ("not JSON"); 3.15
+    # parses it to a list ("not a JSON object"). Either way, ManzaArgumentError.
+    body = "[" * 100_000 + "]" * 100_000
+    with pytest.raises(ManzaArgumentError):
+        construct(signed_headers(body), payload=body)
+
+
 def test_construct_event_raises_argument_error_not_type_error_on_a_non_string_payload():
     with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
         construct(signed_headers(42), payload=42)

@@ -93,7 +93,9 @@ def construct_event(
 
     try:
         event = json.loads(payload)
-    except ValueError as err:  # JSONDecodeError and UnicodeDecodeError
+    # JSONDecodeError and UnicodeDecodeError are ValueErrors; nesting past the
+    # recursion limit raises RecursionError before Python 3.15.
+    except (ValueError, RecursionError) as err:
         raise ManzaArgumentError("webhook payload is not JSON") from err
     if not isinstance(event, dict):
         raise ManzaArgumentError("webhook payload is not a JSON object")
