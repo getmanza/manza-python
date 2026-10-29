@@ -267,6 +267,8 @@ def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
             try:
                 length = int(self.headers.get("Content-Length") or 0)
             except ValueError:
+                length = -1
+            if length < 0:  # read(-1) would wait for the client to hang up
                 self._respond(400, b"bad request")
                 return
             status = app.handle(self.rfile.read(length), self.headers)
