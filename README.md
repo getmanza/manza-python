@@ -113,6 +113,8 @@ cover every step below.
    client.webhook_endpoints.create(url="https://your-name.ngrok.app/", events=["transfer.executed"])
    ```
 
+   The challenge, `payment.authorization_requested`, needs no subscription: once the endpoint is enrolled (step 5), it is delivered there directly, and it cannot be listed in `events`.
+
 5. **Enrol it in the app**: Settings → Developer → Transfer approval. Pick the endpoint, the currency and both limits, confirm with your two-factor code, and copy the signing secret: it is shown once.
 6. **Allow new payees, or trust each payee.** Turn on *Approve transfers to new payees* at enrolment (or later, same page, with your two-factor code) and set the *Limit per transfer to a new payee*. Your authorizer may then approve a transfer to bank details your workspace never trusted, up to that limit, and its signature trusts them: the webhook's `payment.payee_trusted` is `false` for such a transfer. Bank details whose trust was revoked, or that were edited after trusting, still go to your approvers. Without the option, an approver marks the beneficiary's bank account as trusted from the Beneficiaries list, or you ask them to:
 
