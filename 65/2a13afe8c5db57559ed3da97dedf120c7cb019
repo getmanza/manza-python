@@ -1,0 +1,32 @@
+examples/transfer_authorizer/authorizer.py
+  s_65c3c5c5f93719::t_2a9d92bbc4b97a 1-152,156-303
+  s_65c3c5c5f93719::t_c63943fb45d5b9 153-155
+examples/transfer_authorizer/README.md
+  s_65c3c5c5f93719::t_7464c0de3d1bc0 1-123
+examples/transfer_authorizer/preflight.py
+  s_65c3c5c5f93719::t_e2653783e72124 1-351
+tests/test_webhook.py
+  s_65c3c5c5f93719::t_5cd412c792bdb0 1-244
+tests/examples/test_transfer_authorizer.py
+  s_65c3c5c5f93719::t_b54e3ae8d05121 1-387
+tests/examples/test_preflight.py
+  s_65c3c5c5f93719::t_eab7df9656b0d7 1-69,71-155,157-326
+src/manza/webhook.py
+  s_65c3c5c5f93719::t_739664cf12a66c 1-148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "652a13afe8c5db57559ed3da97dedf120c7cb019",
+  "prompts": {},
+  "sessions": {
+    "s_65c3c5c5f93719": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bee1964f-92c4-4310-92b4-5e82d7d3d709",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "mhenrixon <mikael@mhenrixon.com>"
+    }
+  }
+}
