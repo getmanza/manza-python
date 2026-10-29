@@ -18,7 +18,7 @@ def make_client() -> Iterator[Callable[[list[str]], Manza]]:
     bound to a cassette-replay transport that walks those cassettes in order.
 
     Load one cassette per test when two cassettes share method + URI
-    (`transfer_drafts/authorize` vs `authorize_same_key`, `create` vs
+    (`payments/authorize` vs `authorize_same_key`, `create` vs
     `create_duplicate`). `body_match` tightens matching: "exact" compares the
     recorded request body byte for byte, "without_signature" compares the
     parsed JSON minus its `signature` key."""

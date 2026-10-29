@@ -7,6 +7,56 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+Mirrors manza-ruby 1.2.0 and 1.3.0.
+
+### Added
+
+- `client.payments` (`Payments`): `create`, `get`, `authorize` and `decline`
+  on the API's canonical paths, `POST /api/payments`, `GET /api/payments/:id`,
+  `POST /api/payments/:id/authorize` and `POST /api/payments/:id/decline`. The
+  API renamed transfer drafts to payments; request and response bodies are
+  unchanged, and so is the `manza.transfer_authorization` signature input.
+- `client.transfer_authorizer.get()` (`GET /api/transfer_authorizer`): the
+  enrolled authorizer's `status`, `suspension_reason`, limits,
+  `daily_authorized_total`, `secret_expires_at` and `webhook_endpoint_id`.
+  Raises `ManzaNotFoundError` when none is enrolled.
+- `manza.webhook` verifies incoming webhook deliveries: `verify` (bool),
+  `construct_event` (returns the parsed event, raises `ManzaArgumentError`)
+  and `sign`. Takes the raw body as bytes or str and reads `X-Manza-*` headers
+  in any case, the WSGI `HTTP_X_MANZA_*` form and the legacy `X-Zazu-*` names
+  from any headers object with `items()`; checks the timestamp within 5
+  minutes (`tolerance=None` skips it, for local replay only). Tested with the
+  fixed vector shared across SDKs. No new error class.
+- Documented the new pass-through fields: a draft's `authorization` carries
+  `refusal_reason` (status `refused` when it went to the approvers at create
+  time), bank accounts carry `trusted`, and the challenge webhook's
+  `payment.payee_trusted` says whether the payee was trusted already.
+- `examples/transfer_authorizer/`: a runnable two-key transfer authorizer on
+  the standard library's `http.server` (`authorizer.py`), a creator script
+  that prints where the API routed the draft, a JSON ledger and a
+  `preflight.py` that checks every setup step and prints the fix. Not shipped
+  in the package.
+- README: "Setup, step by step" for machine-authorized transfers, a verifier
+  snippet, and the example README's Flask and FastAPI snippets.
+
+### Deprecated
+
+- `client.transfer_drafts` and `TransferDrafts`. Both keep working for all of
+  1.x: the accessor returns `client.payments` and the class name is the same
+  class, so the old name now calls `/api/payments` too. The accessor emits a
+  `DeprecationWarning` (shown when deprecation warnings are on). The server
+  keeps `/api/transfer_drafts` as a permanent alias.
+
+### Changed
+
+- Cassettes are fetched from manza-ruby `v1.3.0` (`cassettes-v1.3.0.tar.gz`).
+  The nine payment cassettes moved from `transfer_drafts/` to `payments/` and
+  match the `/api/payments…` URIs; `payments/create` and `beneficiaries/create`
+  match the new recorded request bodies. `tests/fixture_ids.py` gains the
+  refused and new-payee fixtures (34 entries, identical to manza-ruby's).
+
+## [1.0.0]
+
 ### Added
 
 - `ManzaConflictError` (409), the 10th error class. A duplicate

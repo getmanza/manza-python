@@ -1,6 +1,6 @@
 """Manza Python SDK. Mirrors lib/manza.rb."""
 
-from . import transfer_authorization
+from . import transfer_authorization, webhook
 from ._version import __version__
 from .client import Manza
 from .errors import (
@@ -25,6 +25,8 @@ from .resources.entity import Entity
 from .resources.invoices import Invoices
 from .resources.payee_trust_requests import PayeeTrustRequests
 from .resources.payment_links import PaymentLinks
+from .resources.payments import Payments
+from .resources.transfer_authorizer import TransferAuthorizer
 from .resources.transfer_drafts import TransferDrafts
 from .resources.webhook_endpoints import WebhookEndpoints
 from .response import ManzaResponse
@@ -56,8 +58,11 @@ __all__ = [
     "Page",
     "PayeeTrustRequests",
     "PaymentLinks",
+    "Payments",
+    "TransferAuthorizer",
     "TransferDrafts",
     "WebhookEndpoints",
     "__version__",
     "transfer_authorization",
+    "webhook",
 ]

@@ -18,13 +18,16 @@ def test_get(make_client):
     response = manza.beneficiaries.get(FIXTURE_IDS["MANZA_FIXTURE_BENEFICIARY_ID"])
     assert isinstance(response.body["id"], str)
     assert isinstance(response.body["external_accounts"], list)
+    # Setup step 6: the default bank account is a trusted payee.
+    default = next(a for a in response.body["external_accounts"] if a["default"])
+    assert default["trusted"] is True
 
 
 def test_create(make_client):
     manza = make_client(["beneficiaries/create"], body_match="exact")
     response = manza.beneficiaries.create(
         beneficiary_type="business",
-        company_name="Zazu Fixture Beneficiary - spec (zazu-ruby-fixture)",
+        company_name="Manza Fixture Beneficiary spec",
         email="fixture-beneficiary-spec@example.com",
     )
     assert response.status == 201
@@ -52,6 +55,8 @@ def test_get_external_account(make_client):
     )
     assert response.body["id"] == FIXTURE_IDS["MANZA_FIXTURE_EXTERNAL_ACCOUNT_ID"]
     assert "default" in response.body
+    # Fresh per seed and never trusted; the new-payee authorize trusts it later.
+    assert response.body["trusted"] is False
 
 
 def test_create_external_account(make_client):
