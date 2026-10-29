@@ -130,7 +130,10 @@ def _parse_timestamp(timestamp: Any) -> int | None:
     if isinstance(timestamp, int):
         return timestamp
     if isinstance(timestamp, str) and _TIMESTAMP.fullmatch(timestamp):
-        return int(timestamp)
+        try:
+            return int(timestamp)
+        except ValueError:  # past sys.get_int_max_str_digits()
+            return None
     return None
 
 

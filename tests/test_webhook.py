@@ -104,6 +104,10 @@ def test_verify_rejects_a_non_numeric_timestamp():
     assert verify(timestamp="yesterday", tolerance=None) is False
 
 
+def test_verify_rejects_a_timestamp_past_the_int_conversion_limit_without_raising():
+    assert verify(timestamp="9" * 5000, tolerance=None) is False
+
+
 def test_verify_rejects_a_bool_timestamp():
     assert verify(timestamp=True, tolerance=None) is False
 
@@ -199,6 +203,11 @@ def test_construct_event_raises_on_a_missing_timestamp_header():
 def test_construct_event_raises_on_a_bad_signature():
     with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
         construct({"X-Manza-Signature": "0" * 64, "X-Manza-Timestamp": TIMESTAMP})
+
+
+def test_construct_event_raises_argument_error_on_a_timestamp_past_the_int_conversion_limit():
+    with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
+        construct({"X-Manza-Signature": SIGNATURE, "X-Manza-Timestamp": "9" * 5000})
 
 
 def test_construct_event_raises_on_a_stale_timestamp():
