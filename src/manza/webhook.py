@@ -34,14 +34,20 @@ from .errors import ManzaArgumentError
 
 DEFAULT_TOLERANCE = 300  # seconds
 
-_TIMESTAMP = re.compile(r"[+-]?[0-9]+")
+# Unix seconds are 10 digits; the bound keeps int() far below
+# sys.get_int_max_str_digits(), so an absurd header is a mismatch, not a ValueError.
+_TIMESTAMP = re.compile(r"[+-]?[0-9]{1,18}")
+_MAX_TIMESTAMP = 10**18
 
 
-class Headers(Protocol):
-    """Anything with ``items()``: a dict, a WSGI environ, Flask's or Starlette's
-    headers, or ``http.server``'s ``self.headers``."""
-
+class _HeaderMapping(Protocol):
     def items(self) -> Iterable[tuple[str, Any]]: ...
+
+
+# Anything with ``items()`` (a dict, a WSGI environ, Flask's or Starlette's
+# headers, ``http.server``'s ``self.headers``), or ASGI's raw
+# ``scope["headers"]`` list of byte pairs.
+Headers = _HeaderMapping | Iterable[tuple[str | bytes, Any]]
 
 
 def sign(*, payload: str | bytes, timestamp: str | int, secret: str) -> str:
@@ -77,7 +83,8 @@ def construct_event(
     now: float | None = None,
 ) -> dict[str, Any]:
     """Reads X-Manza-Signature / X-Manza-Timestamp from ``headers``
-    (case-insensitive, X-Zazu-* fallback, WSGI ``HTTP_X_MANZA_*`` form too),
+    (case-insensitive, X-Zazu-* fallback, WSGI ``HTTP_X_MANZA_*`` form and
+    ASGI raw byte pairs too),
     verifies them, and returns the parsed JSON object. Raises
     ``ManzaArgumentError`` when a header is missing, the signature does not
     match, the timestamp is outside tolerance, or the body is not a JSON object.
@@ -130,29 +137,32 @@ def _parse_timestamp(timestamp: Any) -> int | None:
     if isinstance(timestamp, bool):
         return None
     if isinstance(timestamp, int):
-        return timestamp
+        return timestamp if abs(timestamp) < _MAX_TIMESTAMP else None
     if isinstance(timestamp, str) and _TIMESTAMP.fullmatch(timestamp):
-        try:
-            return int(timestamp)
-        except ValueError:  # past sys.get_int_max_str_digits()
-            return None
+        return int(timestamp)
     return None
 
 
 def _normalize_headers(headers: Headers) -> dict[str, Any]:
+    pairs = headers.items() if hasattr(headers, "items") else headers
     normalized: dict[str, Any] = {}
-    for name, value in headers.items():
-        key = str(name)
+    for name, raw in pairs:
+        key = name.decode("latin-1") if isinstance(name, bytes) else str(name)
         if key[:5].upper() == "HTTP_":
             key = key[5:]
+        value = raw.decode("latin-1") if isinstance(raw, bytes) else raw
         normalized[key.replace("_", "-").lower()] = value
     return normalized
 
 
-def _header(normalized: dict[str, Any], suffix: str) -> str:
+def _header(normalized: dict[str, Any], suffix: str) -> str | int:
     value = normalized.get(f"x-manza-{suffix}")
     if value is None:
         value = normalized.get(f"x-zazu-{suffix}")
+    # An int passes through as is: str() of a huge one raises ValueError, and
+    # the timestamp parse bounds it.
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
     if value is not None and str(value) != "":
         return str(value)
     raise ManzaArgumentError(f"missing X-Manza-{suffix.capitalize()} header")

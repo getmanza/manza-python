@@ -7,7 +7,7 @@ The ``payment.authorization_requested`` webhook delivers the authorization id
 and a one-time nonce. Build the signature input from your *own* record of the
 transfer (not the webhook's ``signature_input``, which is there only to compare
 against), sign it with the authorizer endpoint's signing secret, and pass the
-result to ``TransferDrafts.authorize``::
+result to ``Payments.authorize``::
 
     from manza import transfer_authorization as ta
 
@@ -21,7 +21,7 @@ result to ``TransferDrafts.authorize``::
         client_reference=draft["client_reference"],
     )
     signature = ta.sign(signing_secret, signature_input)
-    manza.transfer_drafts.authorize(draft["id"], authorization_id, signature)
+    manza.payments.authorize(draft["id"], authorization_id, signature)
 """
 
 from __future__ import annotations

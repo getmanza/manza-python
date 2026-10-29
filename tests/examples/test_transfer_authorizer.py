@@ -8,6 +8,7 @@ Drives the example's authorizer with a signed copy of the documented
 from __future__ import annotations
 
 import copy
+import http.client
 import json
 import logging
 import threading
@@ -17,6 +18,7 @@ import urllib.request
 from collections.abc import Iterator
 from http.server import ThreadingHTTPServer
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 import pytest
@@ -384,4 +386,18 @@ def test_the_http_server_passes_the_raw_body_and_headers_to_the_app(server, api)
 
     assert post(server, body, "") == (200, b"ok")
     assert post(server, body, "0" * 64) == (401, b"unauthorized")
+    assert api.requests == []
+
+
+def test_the_http_server_answers_400_to_a_content_length_that_is_not_a_number(server, api):
+    url = urlsplit(server)
+    connection = http.client.HTTPConnection(url.hostname, url.port)
+    try:
+        connection.putrequest("POST", "/")
+        connection.putheader("Content-Length", "lots")
+        connection.endheaders()
+        response = connection.getresponse()
+        assert (response.status, response.read()) == (400, b"bad request")
+    finally:
+        connection.close()
     assert api.requests == []

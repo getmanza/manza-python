@@ -130,7 +130,7 @@ Pass the **raw request body** (bytes or str), never re-serialized JSON.
 `webhook.construct_event` reads `X-Manza-Signature` and `X-Manza-Timestamp`
 (any case, the WSGI `HTTP_X_MANZA_*` form, or the legacy `X-Zazu-*` names) from
 any headers object with `items()` (a dict, Flask's or Starlette's headers,
-`http.server`'s `self.headers`), checks the signature in constant time and the
+`http.server`'s `self.headers`) or ASGI's raw `scope["headers"]` byte pairs, checks the signature in constant time and the
 timestamp within 5 minutes, and returns the parsed event (a dict). It raises
 `ManzaArgumentError` otherwise:
 

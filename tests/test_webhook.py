@@ -108,6 +108,10 @@ def test_verify_rejects_a_timestamp_past_the_int_conversion_limit_without_raisin
     assert verify(timestamp="9" * 5000, tolerance=None) is False
 
 
+def test_verify_rejects_an_int_timestamp_past_the_int_conversion_limit_without_raising():
+    assert verify(timestamp=10**5000, tolerance=None) is False
+
+
 def test_verify_rejects_a_bool_timestamp():
     assert verify(timestamp=True, tolerance=None) is False
 
@@ -208,6 +212,19 @@ def test_construct_event_raises_on_a_bad_signature():
 def test_construct_event_raises_argument_error_on_a_timestamp_past_the_int_conversion_limit():
     with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
         construct({"X-Manza-Signature": SIGNATURE, "X-Manza-Timestamp": "9" * 5000})
+
+
+def test_construct_event_raises_argument_error_on_an_int_header_past_the_conversion_limit():
+    with pytest.raises(ManzaArgumentError, match=r"^invalid webhook signature$"):
+        construct({"X-Manza-Signature": SIGNATURE, "X-Manza-Timestamp": 10**5000})
+
+
+def test_construct_event_reads_asgi_raw_headers():
+    headers = [
+        (b"x-manza-signature", SIGNATURE.encode()),
+        (b"x-manza-timestamp", TIMESTAMP.encode()),
+    ]
+    assert construct(headers)["event"] == "test.ping"
 
 
 def test_construct_event_raises_on_a_stale_timestamp():

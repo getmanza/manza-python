@@ -264,9 +264,15 @@ def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
-            length = int(self.headers.get("Content-Length") or 0)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._respond(400, b"bad request")
+                return
             status = app.handle(self.rfile.read(length), self.headers)
-            text = b"ok" if status == 200 else b"unauthorized"
+            self._respond(status, b"ok" if status == 200 else b"unauthorized")
+
+        def _respond(self, status: int, text: bytes) -> None:
             self.send_response(status)
             self.send_header("Content-Type", "text/plain")
             self.send_header("Content-Length", str(len(text)))

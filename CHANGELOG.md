@@ -24,7 +24,8 @@ Mirrors manza-ruby 1.2.0 and 1.3.0.
   `construct_event` (returns the parsed event, raises `ManzaArgumentError`)
   and `sign`. Takes the raw body as bytes or str and reads `X-Manza-*` headers
   in any case, the WSGI `HTTP_X_MANZA_*` form and the legacy `X-Zazu-*` names
-  from any headers object with `items()`; checks the timestamp within 5
+  from any headers object with `items()` or ASGI's raw byte pairs; checks
+  the timestamp within 5
   minutes (`tolerance=None` skips it, for local replay only). Tested with the
   fixed vector shared across SDKs. No new error class.
 - Documented the new pass-through fields: a draft's `authorization` carries
