@@ -132,9 +132,10 @@ class App:
             entry = self._wait_for_entry(client_reference)
 
             if entry is None:
-                mismatch = f"client_reference {client_reference!r} is not in the ledger"
-            else:
-                mismatch = self._mismatch_reason(entry, payment)
+                reason = f"client_reference {client_reference!r} is not in the ledger"
+                self._decline(payment["id"], authorization["id"], reason)
+                return
+            mismatch = self._mismatch_reason(entry, payment)
             if mismatch:
                 self._decline(payment["id"], authorization["id"], mismatch)
                 return
@@ -197,7 +198,7 @@ class App:
         self,
         entry: dict[str, Any],
         authorization: dict[str, Any],
-        client_reference: str,
+        client_reference: str | None,
         webhook_input: Any,
     ) -> None:
         signature_input = transfer_authorization.signature_input(

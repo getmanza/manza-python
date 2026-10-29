@@ -79,6 +79,11 @@ def test_verify_rejects_a_non_ascii_signature_without_raising():
     assert verify(signature="é" * 64) is False
 
 
+@pytest.mark.parametrize("field", ["signature", "payload", "secret"])
+def test_verify_rejects_a_lone_surrogate_without_raising(field):
+    assert verify(**{field: "\ud800" * 64}) is False
+
+
 def test_verify_rejects_a_timestamp_301_seconds_old():
     assert verify(now=NOW + 301) is False
 

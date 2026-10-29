@@ -33,3 +33,11 @@ def test_calls_api_payments(make_client):
         warnings.simplefilter("ignore", DeprecationWarning)
         response = manza.transfer_drafts.get(FIXTURE_IDS["MANZA_FIXTURE_TRANSFER_DRAFT_ID"])
     assert isinstance(response.body["id"], str)
+
+
+def test_assigning_it_replaces_payments(make_client):
+    manza = make_client([])
+    replacement = Payments(manza)
+    with pytest.warns(DeprecationWarning):
+        manza.transfer_drafts = replacement
+    assert manza.payments is replacement

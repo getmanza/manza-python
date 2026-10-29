@@ -46,8 +46,8 @@ class Headers(Protocol):
 
 def sign(*, payload: str | bytes, timestamp: str | int, secret: str) -> str:
     """Hex HMAC-SHA256 of ``"<timestamp>.<payload>"``. For tests and local tools."""
-    body = payload if isinstance(payload, bytes) else str(payload).encode()
-    return hmac.new(secret.encode(), f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()
+    body = payload if isinstance(payload, bytes) else _utf8(str(payload))
+    return hmac.new(_utf8(secret), _utf8(f"{timestamp}.") + body, hashlib.sha256).hexdigest()
 
 
 def verify(
@@ -108,7 +108,12 @@ def _signature_matches(payload: Any, signature: Any, timestamp: Any, secret: Any
     expected = sign(payload=payload, timestamp=timestamp, secret=secret)
     # compare_digest raises on a non-ASCII str; compare bytes so a junk header
     # is a mismatch, not an exception.
-    return hmac.compare_digest(expected.encode(), signature.encode())
+    return hmac.compare_digest(_utf8(expected), _utf8(signature))
+
+
+def _utf8(text: str) -> bytes:
+    # surrogatepass: a lone surrogate is a mismatch, never a UnicodeEncodeError.
+    return text.encode("utf-8", "surrogatepass")
 
 
 def _timestamp_fresh(timestamp: Any, tolerance: int | None, now: float | None) -> bool:

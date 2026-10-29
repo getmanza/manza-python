@@ -94,6 +94,16 @@ class Manza:
         )
         return self.payments
 
+    @transfer_drafts.setter
+    def transfer_drafts(self, resource: Payments) -> None:
+        """Deprecated: assigns ``payments``, which the old name returns."""
+        warnings.warn(
+            "transfer_drafts is deprecated; use payments instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.payments = resource
+
     def __enter__(self) -> Manza:
         return self
 
