@@ -6,7 +6,7 @@ Two processes and a shared ledger, matching the two-key model of [transfer autho
 |---|---|---|
 | `create_transfer.py` | Creates a transfer draft, records it in `ledger.json` from the API's response | A (`transfers:write`) |
 | `authorizer.py` | Receives `payment.authorization_requested`, verifies it, checks the ledger, signs and authorizes (or declines) | B (`transfers:authorize`) |
-| `preflight.py` | Checks every setup step and prints the fix for each that fails | A and B |
+| `preflight.py` | Checks the setup steps the API shows and prints the fix for each that fails; warns about what it cannot see (key scopes, key B's IP allowlist, whether the signing secret is current) | A and B |
 | `ledger.py` | Your own record of what you created, keyed by `client_reference`. Swap it for your database | — |
 | `routing.py` | Says in words where the API sent a new draft | — |
 | `env_file.py` | Loads `.env` (overriding what the shell exported) | — |
@@ -30,12 +30,12 @@ cp .env.example .env    # fill in both keys, the signing secret, the account and
 
 | Check | Fails when |
 |---|---|
-| Keys | any of `MANZA_CREATOR_API_KEY`, `MANZA_AUTHORIZER_API_KEY`, `MANZA_ACCOUNT_ID`, `MANZA_BENEFICIARY_ID` is empty, or the two keys are the same |
+| Keys | any of `MANZA_CREATOR_API_KEY`, `MANZA_AUTHORIZER_API_KEY`, `MANZA_ACCOUNT_ID`, `MANZA_BENEFICIARY_ID` is empty, or the two keys are the same. It warns that key A's `transfers:write`, key B's `transfers:authorize` and key B's IP allowlist are not visible through the API: check them by hand |
 | Key A reaches the API | `entity.get()` with key A is refused: a wrong key, a missing scope, or this machine outside its IP allowlist |
 | Transfer authorizer | `transfer_authorizer.get()` with key B is not `active`: prints the `suspension_reason` and its fix, or that nothing is enrolled |
 | Currency | `MANZA_ACCOUNT_ID`'s currency is not the enrolled currency |
 | Secret expiry | `secret_expires_at` is less than 7 days away |
-| Signing secret | `MANZA_AUTHORIZER_SECRET` is empty |
+| Signing secret | `MANZA_AUTHORIZER_SECRET` is empty. When set, it warns: the API cannot confirm it is the enrolled endpoint's current secret |
 | Webhook endpoint | the enrolled endpoint (`webhook_endpoint_id`) is not active. On `ngrok-free.app` or `trycloudflare.com` it warns: that URL changes when the tunnel restarts |
 | Amount | over the limit per transfer, or over what is left of the limit per 24 hours (`daily_limit` − `daily_authorized_total`) |
 | Payee | the beneficiary has no default bank account. When that account is not `trusted` it warns: the transfer qualifies only with *Approve transfers to new payees* on (not visible through the API), key A bound to an IP allowlist and the amount within the limit per transfer to a new payee, and only for bank details never trusted: revoked or edited details always go to your approvers |

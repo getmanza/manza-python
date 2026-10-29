@@ -112,6 +112,11 @@ def test_verify_rejects_an_int_timestamp_past_the_int_conversion_limit_without_r
     assert verify(timestamp=10**5000, tolerance=None) is False
 
 
+@pytest.mark.parametrize("now", [float("nan"), float("inf"), float("-inf")])
+def test_verify_rejects_a_now_that_is_not_a_finite_number_without_raising(now):
+    assert verify(now=now) is False
+
+
 def test_verify_rejects_a_bool_timestamp():
     assert verify(timestamp=True, tolerance=None) is False
 

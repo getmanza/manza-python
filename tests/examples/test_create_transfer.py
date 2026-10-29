@@ -18,11 +18,18 @@ from manza import Manza
 BASE_URL = "https://staging.manza.example"
 
 
-def creator(status: int, body: dict[str, Any], seen: list[httpx.Request]) -> Manza:
+def creator(
+    status: int,
+    body: dict[str, Any],
+    seen: list[httpx.Request],
+    headers: dict[str, str] | None = None,
+) -> Manza:
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request)
         return httpx.Response(
-            status, headers={"content-type": "application/json"}, content=json.dumps(body).encode()
+            status,
+            headers={"content-type": "application/json", **(headers or {})},
+            content=json.dumps(body).encode(),
         )
 
     return Manza(
@@ -87,7 +94,7 @@ def test_exits_with_the_error_type_and_request_id_when_create_fails(tmp_path):
     ledger = Ledger(tmp_path / "ledger.json")
     refused = {"error": {"type": "validation_error", "message": "amount is invalid"}}
 
-    failed = r"create failed for client_reference example-.*validation_error"
+    failed = r"create failed for client_reference example-.*'validation_error'.*'req_123'"
     with pytest.raises(SystemExit, match=failed):
-        run(creator(422, refused, []), ledger)
+        run(creator(422, refused, [], {"X-Request-Id": "req_123"}), ledger)
     assert not (tmp_path / "ledger.json").exists()

@@ -17,7 +17,13 @@ def load(path: Path = HERE / ".env") -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.removeprefix("export ").partition("=")
-        value = value.strip()
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-            value = value[1:-1]
-        os.environ[key.strip()] = value
+        os.environ[key.strip()] = _value(value.strip())
+
+
+def _value(raw: str) -> str:
+    """A quoted value runs to its closing quote; an unquoted one stops at " #"."""
+    if raw[:1] in ("\"", "'"):
+        end = raw.find(raw[0], 1)
+        if end > 0:
+            return raw[1:end]
+    return raw.split(" #", 1)[0].rstrip()

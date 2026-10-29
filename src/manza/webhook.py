@@ -25,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 import re
 import time
 from collections.abc import Iterable
@@ -130,7 +131,9 @@ def _timestamp_fresh(timestamp: Any, tolerance: int | None, now: float | None) -
         return True
     seconds = _parse_timestamp(timestamp)
     current = time.time() if now is None else now
-    return seconds is not None and abs(int(current) - seconds) <= tolerance
+    if seconds is None or not math.isfinite(current):
+        return False
+    return abs(int(current) - seconds) <= tolerance
 
 
 def _parse_timestamp(timestamp: Any) -> int | None:

@@ -122,6 +122,11 @@ class Preflight:
             )
             return False
         self._pass("key A and key B are set and different")
+        self._warn(
+            "the API does not show key A's transfers:write scope, key B's transfers:authorize "
+            "scope or key B's IP allowlist",
+            "check them in Settings → Developer → API keys: key B needs both to authorize",
+        )
         return True
 
     # 2. Key A reaches the API.
@@ -201,6 +206,12 @@ class Preflight:
     def _secret_set(self) -> None:
         if self._value("MANZA_AUTHORIZER_SECRET"):
             self._pass("MANZA_AUTHORIZER_SECRET is set")
+            self._warn(
+                "the API cannot confirm MANZA_AUTHORIZER_SECRET is the enrolled endpoint's current "
+                "secret",
+                "copy it again from enrolment or the last rotation: five invalid signatures in a "
+                "row suspend the authorizer",
+            )
             return
         self._fail(
             "MANZA_AUTHORIZER_SECRET is not set",

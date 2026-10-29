@@ -116,6 +116,10 @@ def warnings_of(output: str) -> list[str]:
     return [line for line in output.splitlines() if line.startswith("!")]
 
 
+def warning_with(output: str, text: str) -> str:
+    return next(line for line in warnings_of(output) if text in line)
+
+
 def test_passes_every_step_when_the_setup_is_complete(setup):
     ok, output = setup.run()
 
@@ -293,8 +297,7 @@ def test_warns_when_the_endpoint_is_on_a_url_that_changes_when_the_tunnel_restar
     ok, output = setup.run()
 
     assert ok is True
-    assert "ngrok-free.app" in warnings_of(output)[0]
-    assert "reserved domain" in warnings_of(output)[0]
+    assert "reserved domain" in warning_with(output, "ngrok-free.app")
 
 
 def test_fails_when_the_amount_is_over_the_limit_per_transfer(setup):
@@ -315,8 +318,9 @@ def test_warns_that_a_new_payee_needs_the_toggle_which_the_api_does_not_show(set
     ok, output = setup.run()
 
     assert ok is True
-    for part in ("not trusted yet", "Approve transfers to new payees", "IP allowlist"):
-        assert part in warnings_of(output)[0]
+    warning = warning_with(output, "not trusted yet")
+    for part in ("Approve transfers to new payees", "IP allowlist"):
+        assert part in warning
 
 
 def test_fails_when_the_beneficiary_has_no_default_bank_account(setup):
@@ -324,3 +328,19 @@ def test_fails_when_the_beneficiary_has_no_default_bank_account(setup):
     _, output = setup.run()
 
     assert "default bank account" in failures(output)[0]
+
+
+def test_warns_what_the_api_cannot_show_about_the_keys(setup):
+    ok, output = setup.run()
+
+    assert ok is True
+    warning = warning_with(output, "transfers:write")
+    for part in ("key A", "key B", "transfers:authorize", "IP allowlist"):
+        assert part in warning
+
+
+def test_warns_that_only_the_presence_of_the_signing_secret_is_checked(setup):
+    ok, output = setup.run()
+
+    assert ok is True
+    assert "current" in warning_with(output, "MANZA_AUTHORIZER_SECRET")

@@ -61,7 +61,7 @@ manza.transfer_authorizer.get()        # status, suspension_reason, limits; 404:
 - Error model: a 10-class `ManzaError` hierarchy (`ManzaArgumentError`, `ManzaConfigurationError`, `ManzaConnectionError`, `ManzaAuthenticationError`, `ManzaForbiddenError`, `ManzaNotFoundError`, `ManzaValidationError`, `ManzaConflictError`, `ManzaRateLimitError`, `ManzaServerError`). Discriminate via `isinstance(err, ManzaValidationError)`, never status-code matching. 400 and 422 map to `ManzaValidationError`; 409 maps to `ManzaConflictError`, which carries `payment_id` for a duplicate transfer-draft `client_reference`.
 - `payments.authorize` raises `ManzaArgumentError` locally on a blank signature (before any HTTP call), because the API counts it as a failed attempt.
 - `manza.transfer_authorization` (`signature_input`, `sign`, `payee_for`) is the HMAC-SHA256 signer for authorization challenges. Pure functions, no HTTP.
-- `manza.webhook` (`verify`, `construct_event`, `sign`) verifies `X-Manza-Signature` deliveries against the fixed vector shared across SDKs; failures raise the existing `ManzaArgumentError` (no new error class).
+- `manza.webhook` (`verify`, `construct_event`, `sign`) checks `X-Manza-Signature` deliveries, tested with the fixed vector shared across SDKs. `verify` returns `False` on any bad delivery and never raises; `construct_event` raises the existing `ManzaArgumentError` (no new error class).
 - `examples/transfer_authorizer/` is a runnable authorizer on `http.server` (standard library only), tested in `tests/examples/` with `httpx.MockTransport`. It is not in the published package (`[tool.hatch.build]` ships `src/manza` only).
 - Snake-case wire format: request and response bodies are returned as-is. **No auto-camelCasing.**
 

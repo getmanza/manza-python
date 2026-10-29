@@ -156,6 +156,8 @@ Sign the draft from **your own record** of it with the endpoint's signing
 secret, using `manza.transfer_authorization`:
 
 ```python
+import os
+
 from manza import Manza, transfer_authorization as ta
 
 signature_input = ta.signature_input(
@@ -171,7 +173,7 @@ signature = ta.sign(signing_secret, signature_input)  # lowercase hex HMAC-SHA25
 
 authorizer = Manza(api_key=os.environ["MANZA_AUTHORIZER_API_KEY"])
 authorizer.payments.authorize(draft["id"], event["data"]["authorization"]["id"], signature)
-# or: authorizer.payments.decline(draft["id"], authorization_id, "reason")
+# or: authorizer.payments.decline(draft["id"], event["data"]["authorization"]["id"], "reason")
 ```
 
 `payee_for` takes exactly one of `external_account_id` / `destination_account_id`.
