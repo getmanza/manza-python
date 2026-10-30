@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.1.0]
+
 Mirrors manza-ruby 1.2.0 and 1.3.0.
 
 ### Added
