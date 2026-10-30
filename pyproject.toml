@@ -49,7 +49,8 @@ path = "src/manza/_version.py"
 packages = ["src/manza"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/manza", "README.md", "CHANGELOG.md", "LICENSE"]
+# Anchored: an unanchored "README.md" also matches examples/*/README.md.
+include = ["/src/manza", "/README.md", "/CHANGELOG.md", "/LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -19,7 +19,7 @@ Python SDK for the Manza API (PyPI: `manza`, import package `manza`). **Cassette
 ## Public API surface
 
 ```python
-from manza import Manza, ManzaConflictError, transfer_authorization as ta
+from manza import Manza, ManzaConflictError, transfer_authorization as ta, webhook
 
 manza = Manza(api_key="sk_live_...")   # or MANZA_API_KEY; base_url= or MANZA_BASE_URL
 
@@ -43,20 +43,26 @@ manza.beneficiaries.create_external_account(beneficiary_id, ...)
 manza.payee_trust_requests.create([external_account_id])
 manza.payee_trust_requests.get(id)
 
-# Machine-authorized transfer drafts
+# Machine-authorized payments (formerly transfer drafts)
 try:
-    draft = manza.transfer_drafts.create(..., client_reference="ref-1")
+    draft = manza.payments.create(..., client_reference="ref-1")
 except ManzaConflictError as err:      # 409 duplicate client_reference
     existing = err.payment_id
+manza.payments.get(id)                 # authorization: status, refusal_reason
+event = webhook.construct_event(payload=raw_body, headers=headers, secret=secret)
 signature = ta.sign(secret, ta.signature_input(...))   # built from YOUR record of the transfer
-manza.transfer_drafts.authorize(id, authorization_id, signature)
-manza.transfer_drafts.decline(id, authorization_id, reason="...")
+manza.payments.authorize(id, authorization_id, signature)
+manza.payments.decline(id, authorization_id, reason="...")
+manza.transfer_authorizer.get()        # status, suspension_reason, limits; 404: none enrolled
+# manza.transfer_drafts: deprecated alias of manza.payments (DeprecationWarning), all of 1.x
 ```
 
 - `Page` (generic `Page[T]`) is cursor-based with a hard cap of 100 per page (`MAX_PER_PAGE`); `auto_paging_iter()` chases cursors.
 - Error model: a 10-class `ManzaError` hierarchy (`ManzaArgumentError`, `ManzaConfigurationError`, `ManzaConnectionError`, `ManzaAuthenticationError`, `ManzaForbiddenError`, `ManzaNotFoundError`, `ManzaValidationError`, `ManzaConflictError`, `ManzaRateLimitError`, `ManzaServerError`). Discriminate via `isinstance(err, ManzaValidationError)`, never status-code matching. 400 and 422 map to `ManzaValidationError`; 409 maps to `ManzaConflictError`, which carries `payment_id` for a duplicate transfer-draft `client_reference`.
-- `transfer_drafts.authorize` raises `ManzaArgumentError` locally on a blank signature (before any HTTP call), because the API counts it as a failed attempt.
+- `payments.authorize` raises `ManzaArgumentError` locally on a blank signature (before any HTTP call), because the API counts it as a failed attempt.
 - `manza.transfer_authorization` (`signature_input`, `sign`, `payee_for`) is the HMAC-SHA256 signer for authorization challenges. Pure functions, no HTTP.
+- `manza.webhook` (`verify`, `construct_event`, `sign`) checks `X-Manza-Signature` deliveries, tested with the fixed vector shared across SDKs. `verify` returns `False` on any bad delivery and never raises; `construct_event` raises the existing `ManzaArgumentError` (no new error class).
+- `examples/transfer_authorizer/` is a runnable authorizer on `http.server` (standard library only), tested in `tests/examples/` with `httpx.MockTransport`. It is not in the published package (`[tool.hatch.build]` ships `src/manza` only).
 - Snake-case wire format: request and response bodies are returned as-is. **No auto-camelCasing.**
 
 ## How to work in this codebase
@@ -69,13 +75,13 @@ manza.transfer_drafts.decline(id, authorization_id, reason="...")
 ## Critical rules
 
 - **Never call a live Manza API** from tests, scripts or Claude sessions. Tests replay manza-ruby's cassettes only. Live staging calls create real transfers and approval requests for the team. Only manza-ruby records cassettes.
-- **Cassettes come from the manza-ruby release pinned in `PINNED_TAG`** (currently `v1.0.0`; bump it deliberately). `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` (the pinned tag, or pass a tag) into `tests/fixtures/cassettes/`, which is git-ignored.
+- **Cassettes come from the manza-ruby release pinned in `PINNED_TAG`** (currently `v1.3.0`; bump it deliberately). `python scripts/fetch_cassettes.py` downloads `cassettes-vX.Y.Z.tar.gz` (the pinned tag, or pass a tag) into `tests/fixtures/cassettes/`, which is git-ignored.
 - **Cassette contract.**
   - Cassettes are recorded against `https://ma.manza.dev` (`REPLAY_BASE_URL` in `tests/fixture_ids.py`).
-  - Load one cassette per test: `transfer_drafts/authorize` vs `authorize_same_key`, and `create` vs `create_duplicate`, share method + URI, so loading both makes the wrong one match.
-  - The matcher always compares method + scheme + host + path + sorted query params. Body matching is off by default and opt-in per test via `make_client([...], body_match=...)`: `"exact"` compares the recorded body byte for byte (request bodies are serialized compactly in recorded key order, like Ruby's `JSON.generate`); `"without_signature"` compares parsed JSON minus its `signature` key. The three authorize cassettes (`authorize`, `authorize_same_key`, `authorize_bad_signature`) use `"without_signature"`; the transfer-draft create/decline, beneficiary and payee-trust-request cassettes use `"exact"`.
+  - Load one cassette per test: `payments/authorize` vs `authorize_same_key`, and `create` vs `create_duplicate`, share method + URI, so loading both makes the wrong one match.
+  - The matcher always compares method + scheme + host + path + sorted query params. Body matching is off by default and opt-in per test via `make_client([...], body_match=...)`: `"exact"` compares the recorded body byte for byte (request bodies are serialized compactly in recorded key order, like Ruby's `JSON.generate`); `"without_signature"` compares parsed JSON minus its `signature` key. The four authorize cassettes (`payments/authorize`, `authorize_same_key`, `authorize_bad_signature`, `authorize_new_payee`) use `"without_signature"`; the payment create/decline, beneficiary and payee-trust-request cassettes use `"exact"`.
   - Cassette responses carry no `Content-Length`.
-  - `tests/fixture_ids.py` must stay identical to manza-ruby's `spec/support/fixture_ids.rb` (29 entries). Placeholders must equal what VCR scrubbed the real IDs to.
+  - `tests/fixture_ids.py` must stay identical to manza-ruby's `spec/support/fixture_ids.rb` (34 entries). Placeholders must equal what VCR scrubbed the real IDs to.
 - **Replay mismatch** (`No cassette interaction matched ...`): load one cassette per test, refetch stale cassettes (`python scripts/fetch_cassettes.py`), check path, query and host (`https://ma.manza.dev`) and, for body-matched tests, the compact recorded-order body. Fix the SDK, never the cassette; a genuinely new request shape is re-recorded in manza-ruby and released first.
 - **Public API break** is made only on purpose, named in the changelog and released as a major version.
 - **Hosts.** Default `https://ma.manza.finance`; South Africa `https://za.manza.finance`; staging and cassettes `https://ma.manza.dev`.

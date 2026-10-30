@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from typing import Any
 from urllib.parse import urlencode
 
@@ -31,7 +32,8 @@ from .resources.entity import Entity
 from .resources.invoices import Invoices
 from .resources.payee_trust_requests import PayeeTrustRequests
 from .resources.payment_links import PaymentLinks
-from .resources.transfer_drafts import TransferDrafts
+from .resources.payments import Payments
+from .resources.transfer_authorizer import TransferAuthorizer
 from .resources.webhook_endpoints import WebhookEndpoints
 from .response import ManzaResponse
 
@@ -75,8 +77,32 @@ class Manza:
         self.invoices = Invoices(self)
         self.payee_trust_requests = PayeeTrustRequests(self)
         self.payment_links = PaymentLinks(self)
-        self.transfer_drafts = TransferDrafts(self)
+        self.payments = Payments(self)
+        self.transfer_authorizer = TransferAuthorizer(self)
         self.webhook_endpoints = WebhookEndpoints(self)
+
+    @property
+    def transfer_drafts(self) -> Payments:
+        """Deprecated: use ``payments``. Kept for all of 1.x: returns the same
+        resource, which calls ``/api/payments``. Emits a ``DeprecationWarning``,
+        which Python shows only when deprecation warnings are on (``-W
+        default::DeprecationWarning``, or the test runner)."""
+        warnings.warn(
+            "transfer_drafts is deprecated; use payments instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.payments
+
+    @transfer_drafts.setter
+    def transfer_drafts(self, resource: Payments) -> None:
+        """Deprecated: assigns ``payments``, which the old name returns."""
+        warnings.warn(
+            "transfer_drafts is deprecated; use payments instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.payments = resource
 
     def __enter__(self) -> Manza:
         return self

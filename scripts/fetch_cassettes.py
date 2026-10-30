@@ -23,7 +23,7 @@ from pathlib import Path
 REPO = "getmanza/manza-ruby"
 # Pinned on purpose: an unpinned latest tag lets one manza-ruby release break
 # every SDK's CI at once. Bump it deliberately when the cassette contract changes.
-PINNED_TAG = "v1.0.0"
+PINNED_TAG = "v1.3.0"
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "tests" / "fixtures" / "cassettes"
 
