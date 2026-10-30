@@ -16,3 +16,4 @@ tests/fixtures/cassettes/
 cassettes-v*.tar.gz
 .tox/
 .python-version.local
+.claude/worktrees/
