@@ -5,7 +5,7 @@ in production::
 
     {"po_8812": {"payment_id": "...", "amount": "2500.0",
                  "currency_code": "MAD", "account_id": "...",
-                 "payee": "ext:..."}}
+                 "payee": "ext:...", "transfer_method": "standard"}}
 
 The lock uses ``fcntl``, so this file runs on macOS and Linux.
 """
@@ -32,13 +32,17 @@ class Ledger:
         currency_code: str,
         account_id: str,
         payee: str,
-    ) -> dict[str, str]:
+        transfer_method: str | None,
+    ) -> dict[str, str | None]:
+        """``transfer_method`` is the create response's (None where the market
+        offers no choice): the v2 signature signs it."""
         entry = {
             "payment_id": payment_id,
             "amount": amount,
             "currency_code": currency_code,
             "account_id": account_id,
             "payee": payee,
+            "transfer_method": transfer_method,
         }
         # Serialize writers on a separate lock file, write the new ledger to a
         # temporary file and rename it over the old one: a reader sees the old

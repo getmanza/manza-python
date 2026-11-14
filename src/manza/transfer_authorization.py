@@ -5,8 +5,8 @@ Pure functions, no HTTP.
 
 The ``payment.authorization_requested`` webhook delivers the authorization id
 and a one-time nonce. Build the signature input from your *own* record of the
-transfer (not the webhook's ``signature_input``, which is there only to compare
-against), sign it with the authorizer endpoint's signing secret, and pass the
+transfer (not the webhook's ``signature_input_v2``, which is there only to
+compare against), sign it with the authorizer endpoint's signing secret, and pass the
 result to ``Payments.authorize``::
 
     from manza import transfer_authorization as ta
@@ -19,9 +19,14 @@ result to ``Payments.authorize``::
         account_id=draft["account_id"],
         payee=ta.payee_for(external_account_id=draft["external_account_id"]),
         client_reference=draft["client_reference"],
+        transfer_method=draft["transfer_method"],
     )
     signature = ta.sign(signing_secret, signature_input)
     manza.payments.authorize(draft["id"], authorization_id, signature)
+
+This is the v2 input, which the API verifies for every request that is unpinned
+or sends ``Manza-Version: 2026-11-13`` or later. A client pinned to
+``Manza-Version: 2026-03-27`` must sign v1 and stays on manza 1.x.
 """
 
 from __future__ import annotations
@@ -31,7 +36,7 @@ import hmac
 
 from .errors import ManzaArgumentError
 
-SIGNATURE_VERSION = "manza.transfer-authorization.v1"
+SIGNATURE_VERSION = "manza.transfer-authorization.v2"
 
 
 def signature_input(
@@ -42,12 +47,16 @@ def signature_input(
     currency_code: str,
     account_id: str,
     payee: str,
+    transfer_method: str | None,
     client_reference: str | None = None,
 ) -> str:
     """Build the versioned, pipe-joined input to sign.
 
     ``amount`` must be the API's decimal string verbatim (e.g. ``"2500.0"``).
     ``client_reference`` is empty when the transfer has none.
+    ``transfer_method`` is the payment's rail as the API stores it (the create
+    response's ``transfer_method``): required, and None (signed as an empty
+    segment) where the market offers no choice.
     """
     if not isinstance(amount, str):
         raise ManzaArgumentError(f"amount must be the API's decimal string (got {amount!r})")
@@ -61,6 +70,7 @@ def signature_input(
             account_id,
             payee,
             client_reference or "",
+            transfer_method or "",
         ]
     )
 

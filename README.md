@@ -27,6 +27,14 @@ client.customers.create(
 )
 
 client.invoices.list()
+client.invoices.create(
+    customer_id=customer_id,
+    account_id=account_id,  # required: the account the invoice is paid into
+    issue_date="2026-11-14",
+    due_date="2026-12-14",
+    generate_payment_link=True,  # a card payment link, made when approved (payment_links:write)
+    items=[{"description": "Consulting", "quantity": 10, "unit_price": "150.00"}],
+)
 client.payment_links.cancel(payment_link_id)
 client.webhook_endpoints.list()
 
@@ -41,7 +49,7 @@ client.checkout_sessions.get(session_id)
 
 The client picks up `MANZA_API_KEY`, `MANZA_BASE_URL`, `MANZA_API_VERSION`, and
 `MANZA_TIMEOUT` from the environment if you don't pass them. The old `ZAZU_*`
-names still work for all of 1.x and emit a one-time `FutureWarning`.
+names still work in 1.x and 2.0 and emit a one-time `FutureWarning`.
 
 ### Hosts
 
@@ -81,10 +89,12 @@ draft = client.payments.create(
     beneficiary_id=beneficiary_id,
     amount="250.00",
     client_reference="po_1",  # unique per entity, at most 128 characters
+    transfer_method="standard",  # optional rail: eft/rtc (ZA), standard/instant (MA)
 ).body
 client.payments.get(draft["id"])  # authorization: status, refusal_reason
 
-client.transfer_authorizer.get()  # status, suspension_reason, limits, daily_authorized_total
+client.transfer_authorizer.get()  # status, suspension_reason, limits, daily_authorized_total,
+                                  # trust_new_payees, new_payee_limit
 ```
 
 A duplicate `client_reference` raises `ManzaConflictError` with `payment_id`
@@ -122,7 +132,7 @@ cover every step below.
    client.payee_trust_requests.create(["01a1..."])
    ```
 
-   `trusted` on `client.beneficiaries.get_external_account(...)` says which it is. The API does not show whether the option is on.
+   `trusted` on `client.beneficiaries.get_external_account(...)` says which it is; `trust_new_payees` on `client.transfer_authorizer.get()` says whether the option is on.
 7. **Run the preflight, then the example** (from `examples/transfer_authorizer/`, after installing `manza` and filling in `.env`): `python preflight.py` checks what the API shows of steps 1–6 and prints a fix for each that fails. What it cannot see, check by hand: that key B is bound to an IP allowlist, and, for a payee not trusted yet, that *Approve transfers to new payees* is on and key A is bound to an IP allowlist too (it warns, it does not fail). Then `python authorizer.py` in one terminal, `python create_transfer.py` in another.
 8. **Troubleshooting**: a draft that goes to your approvers instead has an `authorization` with status `refused` and a `refusal_reason` (`create_transfer.py` prints it in words); `client.transfer_authorizer.get()` shows a suspension and its `suspension_reason`. An authorize answered 409 `authorization_busy` (a bank-detail edit, trust or trust revocation on the same payee was in flight) is safe to retry. The reasons, and an API error's `type`, are in the [transfer authorization docs](https://ma.manza.finance/docs/api/transfer-authorization).
 
@@ -155,7 +165,12 @@ endpoint: without the check, anyone holding a captured delivery can replay it.
 ### Signing the challenge
 
 Sign the draft from **your own record** of it with the endpoint's signing
-secret, using `manza.transfer_authorization`:
+secret, using `manza.transfer_authorization`. The SDK builds the v2 input
+(`manza.transfer-authorization.v2`), which ends with the payment's
+`transfer_method` (an empty segment when it is `None`); compare it with the
+webhook's `signature_input_v2`. The webhook's `signature_input` is the v1
+string, verified only for clients pinned to `Manza-Version: 2026-03-27`: those
+stay on manza 1.x.
 
 ```python
 import os
@@ -170,6 +185,7 @@ signature_input = ta.signature_input(
     account_id=draft["account_id"],
     payee=ta.payee_for(external_account_id=draft["external_account_id"]),
     client_reference=draft["client_reference"],
+    transfer_method=draft["transfer_method"],  # required; None signs as ""
 )
 signature = ta.sign(signing_secret, signature_input)  # lowercase hex HMAC-SHA256
 
@@ -200,8 +216,10 @@ for invoice in client.invoices.list().auto_paging_iter():
 
 ## Errors
 
-Ten concrete subclasses; discriminate with `isinstance`. `ManzaValidationError`
-covers 400 and 422, `ManzaConflictError` covers 409 and exposes `payment_id`:
+Eleven concrete subclasses; discriminate with `isinstance`. `ManzaValidationError`
+covers 400 and 422; its subclass `ManzaPlanLimitReachedError` covers a 422
+whose `type` is `plan_limit_reached` (exposing `kind`, `current` and `max`; do
+not retry it). `ManzaConflictError` covers 409 and exposes `payment_id`:
 
 ```python
 from manza import (

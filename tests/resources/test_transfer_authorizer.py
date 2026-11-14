@@ -19,3 +19,6 @@ def test_get(make_client):
         "enrolled_at",
     ):
         assert key in response.body
+    # "Approve transfers to new payees" is on for the fixture entity.
+    assert response.body["trust_new_payees"] is True
+    assert isinstance(response.body["new_payee_limit"], str)

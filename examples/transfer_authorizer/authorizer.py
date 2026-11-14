@@ -53,6 +53,7 @@ CHECKED_FIELDS = {
     "currency_code": "currency_code",
     "account_id": "account_id",
     "payee": "payee",
+    "transfer_method": "transfer_method",
 }
 
 # Failures worth another try: the API did not answer, asked us to slow down,
@@ -163,7 +164,9 @@ class App:
                 payment.get("currency_code"),
                 payment.get("payee"),
             )
-            self._authorize(entry, authorization, client_reference, data.get("signature_input"))
+            self._authorize(
+                entry, authorization, client_reference, data.get("signature_input_v2")
+            )
         except ManzaError as err:
             self._logger.error(
                 "API error %s: %s (type %r, request_id %r)",
@@ -193,8 +196,9 @@ class App:
                 )
         return None
 
-    # Sign from the ledger, never from the webhook: `signature_input` in the
-    # webhook is only there to compare against.
+    # Sign from the ledger, never from the webhook: `signature_input_v2` in the
+    # webhook is only there to compare against. (Its `signature_input` is the v1
+    # string, for clients pinned to Manza-Version 2026-03-27.)
     def _authorize(
         self,
         entry: dict[str, Any],
@@ -210,6 +214,8 @@ class App:
             account_id=entry["account_id"],
             payee=entry["payee"],
             client_reference=client_reference,
+            # A 1.x ledger entry has none: it signs as "", like a null rail.
+            transfer_method=entry.get("transfer_method"),
         )
         # A signature over a different input is sure to fail, and failed
         # attempts count toward suspending the authorizer. Leave the challenge

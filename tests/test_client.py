@@ -13,6 +13,7 @@ from manza import (
     ManzaConnectionError,
     ManzaForbiddenError,
     ManzaNotFoundError,
+    ManzaPlanLimitReachedError,
     ManzaRateLimitError,
     ManzaServerError,
     ManzaValidationError,
@@ -119,6 +120,45 @@ def test_conflict_error_payment_id_defaults_to_none():
         with pytest.raises(ManzaConflictError) as info:
             client.entity.get()
         assert info.value.payment_id is None
+    finally:
+        client.close()
+
+
+# The API's body verbatim (getmanza/app spec/requests/api/invoices_spec.rb).
+def test_422_plan_limit_reached_maps_to_plan_limit_reached_error_carrying_kind_current_and_max():
+    client = _client_with_response(
+        422,
+        body=(
+            b'{"error":{"type":"plan_limit_reached",'
+            b'"message":"Plan limit reached for invoices: 10 of 10",'
+            b'"kind":"invoices","current":10,"max":10}}'
+        ),
+    )
+    try:
+        with pytest.raises(ManzaPlanLimitReachedError) as info:
+            client.entity.get()
+        assert isinstance(info.value, ManzaValidationError)
+        assert info.value.status == 422
+        assert info.value.type == "plan_limit_reached"
+        assert info.value.message == "Plan limit reached for invoices: 10 of 10"
+        assert (info.value.kind, info.value.current, info.value.max) == ("invoices", 10, 10)
+    finally:
+        client.close()
+
+
+def test_any_other_422_stays_a_plain_validation_error():
+    client = _client_with_response(
+        422,
+        body=(
+            b'{"error":{"message":"Customer not found","type":"invalid_request_error",'
+            b'"param":"customer_id"}}'
+        ),
+    )
+    try:
+        with pytest.raises(ManzaValidationError) as info:
+            client.entity.get()
+        assert type(info.value) is ManzaValidationError
+        assert info.value.param == "customer_id"
     finally:
         client.close()
 

@@ -19,6 +19,7 @@ from .errors import (
     ManzaError,
     ManzaForbiddenError,
     ManzaNotFoundError,
+    ManzaPlanLimitReachedError,
     ManzaRateLimitError,
     ManzaServerError,
     ManzaValidationError,
@@ -83,7 +84,7 @@ class Manza:
 
     @property
     def transfer_drafts(self) -> Payments:
-        """Deprecated: use ``payments``. Kept for all of 1.x: returns the same
+        """Deprecated: use ``payments``. Kept in 1.x and 2.0: returns the same
         resource, which calls ``/api/payments``. Emits a ``DeprecationWarning``,
         which Python shows only when deprecation warnings are on (``-W
         default::DeprecationWarning``, or the test runner)."""
@@ -216,6 +217,14 @@ def _build_error(response: ManzaResponse) -> ManzaError:
         return ManzaNotFoundError(message or "Not found", **opts)
     if status == 400:
         return ManzaValidationError(message or "Bad request", **opts)
+    if status == 422 and payload.get("type") == "plan_limit_reached":
+        return ManzaPlanLimitReachedError(
+            message or "Plan limit reached",
+            kind=payload.get("kind"),
+            current=payload.get("current"),
+            max=payload.get("max"),
+            **opts,
+        )
     if status == 422:
         return ManzaValidationError(message or "Validation failed", **opts)
     if status == 409:

@@ -22,7 +22,7 @@ from tests.fixture_ids import FIXTURE_IDS, REPLAY_BASE_URL, TEST_API_KEY
 AUTHORIZER_SIGNING_SECRET = "whsec_replay_placeholder"
 
 
-def test_create(make_client):
+def test_create_carries_the_client_reference_and_the_transfer_method(make_client):
     manza = make_client(["payments/create"], body_match="exact")
     response = manza.payments.create(
         account_id=FIXTURE_IDS["MANZA_FIXTURE_ACCOUNT_ID"],
@@ -31,10 +31,12 @@ def test_create(make_client):
         payment_reference="SDK fixture",
         internal_notes="[zazu-ruby-fixture] create spec - do not approve",
         client_reference=FIXTURE_IDS["MANZA_FIXTURE_CLIENT_REFERENCE"],
+        transfer_method="standard",
     )
     assert response.status == 201
     assert response.body["status"] == "requested"
     assert response.body["client_reference"] == FIXTURE_IDS["MANZA_FIXTURE_CLIENT_REFERENCE"]
+    assert response.body["transfer_method"] == "standard"
     # Inside the envelope: the challenge went to the authorizer.
     assert response.body["authorization"]["status"] == "pending"
     assert response.body["transfer"] is None
@@ -52,6 +54,21 @@ def test_create_duplicate_client_reference(make_client):
     assert info.value.status == 409
     assert info.value.type == "duplicate_client_reference"
     assert info.value.payment_id == FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_DRAFT_ID"]
+
+
+def test_create_with_a_transfer_method_the_market_does_not_offer_raises_validation_error(
+    make_client,
+):
+    manza = make_client(["payments/create_invalid_transfer_method"], body_match="exact")
+    with pytest.raises(ManzaValidationError) as info:
+        manza.payments.create(
+            account_id=FIXTURE_IDS["MANZA_FIXTURE_ACCOUNT_ID"],
+            beneficiary_id=FIXTURE_IDS["MANZA_FIXTURE_BENEFICIARY_ID"],
+            amount="10.00",
+            transfer_method="carrier_pigeon",
+        )
+    assert info.value.status == 422
+    assert info.value.param == "transfer_method"
 
 
 def test_get(make_client):
@@ -85,6 +102,10 @@ def test_authorize_blank_signature_raises_before_any_http_call(signature):
         manza.payments.authorize("draft", "auth", signature)
 
 
+# The seeded drafts send `transfer_method: "standard"` (MA's base rail, always
+# offered), so the v2 input signs that rail: left out, staging would store its
+# default, which depends on its flags.
+#
 # Order matters while recording: five consecutive bad signatures suspend the
 # authorizer, and only a valid authorize resets the streak. Replay is
 # order-independent, one cassette per test.
@@ -123,6 +144,7 @@ def test_authorize(make_client):
             external_account_id=FIXTURE_IDS["MANZA_FIXTURE_TRUSTED_EXTERNAL_ACCOUNT_ID"]
         ),
         client_reference=FIXTURE_IDS["MANZA_FIXTURE_AUTHORIZABLE_CLIENT_REFERENCE"],
+        transfer_method="standard",
     )
     response = manza.payments.authorize(
         draft_id,
@@ -149,6 +171,7 @@ def test_authorize_a_transfer_to_a_new_payee(make_client):
             external_account_id=FIXTURE_IDS["MANZA_FIXTURE_EXTERNAL_ACCOUNT_ID"]
         ),
         client_reference=FIXTURE_IDS["MANZA_FIXTURE_NEW_PAYEE_CLIENT_REFERENCE"],
+        transfer_method="standard",
     )
     response = manza.payments.authorize(
         draft_id,
