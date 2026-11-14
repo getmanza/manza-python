@@ -1,4 +1,4 @@
-"""Mirrors lib/manza/errors.rb. Ten-class hierarchy shared across SDKs."""
+"""Mirrors lib/manza/errors.rb. Eleven-class hierarchy shared across SDKs."""
 
 from __future__ import annotations
 
@@ -58,6 +58,28 @@ class ManzaValidationError(ManzaError):
 
     `param` carries the offending field name when the API supplies it.
     """
+
+
+class ManzaPlanLimitReachedError(ManzaValidationError):
+    """HTTP 422 with `type` "plan_limit_reached": the entity's plan caps this kind
+    of record and the cap is reached. Retrying does not help until the plan
+    changes or the period rolls over. `kind` names what is capped (e.g.
+    "invoices"), `current` the count the entity holds and `max` the cap.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        kind: str | None = None,
+        current: int | None = None,
+        max: int | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(message, **kwargs)
+        self.kind = kind
+        self.current = current
+        self.max = max
 
 
 class ManzaConflictError(ManzaError):

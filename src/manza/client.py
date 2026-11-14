@@ -19,6 +19,7 @@ from .errors import (
     ManzaError,
     ManzaForbiddenError,
     ManzaNotFoundError,
+    ManzaPlanLimitReachedError,
     ManzaRateLimitError,
     ManzaServerError,
     ManzaValidationError,
@@ -216,6 +217,14 @@ def _build_error(response: ManzaResponse) -> ManzaError:
         return ManzaNotFoundError(message or "Not found", **opts)
     if status == 400:
         return ManzaValidationError(message or "Bad request", **opts)
+    if status == 422 and payload.get("type") == "plan_limit_reached":
+        return ManzaPlanLimitReachedError(
+            message or "Plan limit reached",
+            kind=payload.get("kind"),
+            current=payload.get("current"),
+            max=payload.get("max"),
+            **opts,
+        )
     if status == 422:
         return ManzaValidationError(message or "Validation failed", **opts)
     if status == 409:

@@ -67,6 +67,7 @@ def create(
             currency_code=draft["currency_code"],
             account_id=draft["account_id"],
             payee=payee,
+            transfer_method=draft.get("transfer_method"),
         )
     except Exception as err:
         sys.exit(

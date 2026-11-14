@@ -1,7 +1,8 @@
 """Mirror of spec/examples/transfer_authorizer_spec.rb in manza-ruby.
 
 Drives the example's authorizer with a signed copy of the documented
-`payment.authorization_requested` payload. API calls go to an
+`payment.authorization_requested` payload (with v2's `signature_input_v2` and
+`payment.transfer_method`). API calls go to an
 `httpx.MockTransport`: no cassette, no network.
 """
 
@@ -56,12 +57,18 @@ EXAMPLE_PAYLOAD: dict[str, Any] = {
             "destination_account_id": None,
             "payment_reference": "INV-2026-001",
             "client_reference": "po_8812",
+            "transfer_method": "eft",
             "payee_trusted": False,
         },
         "signature_input": (
             "manza.transfer-authorization.v1|01958e51-7c5a-7000-8000-000000000012|"
             "9f86d081884c7d659a2feaa0c55ad015|2500.0|ZAR|01958e51-7c5a-7000-8000-000000000013|"
             "ext:01958e51-7c5a-7000-8000-000000000014|po_8812"
+        ),
+        "signature_input_v2": (
+            "manza.transfer-authorization.v2|01958e51-7c5a-7000-8000-000000000012|"
+            "9f86d081884c7d659a2feaa0c55ad015|2500.0|ZAR|01958e51-7c5a-7000-8000-000000000013|"
+            "ext:01958e51-7c5a-7000-8000-000000000014|po_8812|eft"
         ),
     },
 }
@@ -71,6 +78,7 @@ LEDGER_ENTRY = {
     "currency_code": "ZAR",
     "account_id": "01958e51-7c5a-7000-8000-000000000013",
     "payee": "ext:01958e51-7c5a-7000-8000-000000000014",
+    "transfer_method": "eft",
 }
 
 
@@ -198,17 +206,24 @@ class TestWithAMatchingLedgerEntry:
         assert "invalid_signature" in log.text
         assert "req_123" in log.text
 
-    def test_does_not_authorize_when_the_webhooks_signature_input_differs(
+    def test_signs_the_webhooks_v2_input(self):
+        signature_input = transfer_authorization.signature_input(
+            **LEDGER_ENTRY, nonce="9f86d081884c7d659a2feaa0c55ad015", client_reference="po_8812"
+        )
+
+        assert signature_input == EXAMPLE_PAYLOAD["data"]["signature_input_v2"]
+
+    def test_does_not_authorize_when_the_webhooks_v2_input_differs_from_the_ledgers(
         self, api, ledger, log
     ):
         payload = copy.deepcopy(EXAMPLE_PAYLOAD)
-        payload["data"]["signature_input"] = "something-else"
+        payload["data"]["signature_input_v2"] = "something-else"
 
         deliver(build_app(api, ledger), payload)
 
         assert api.requests == []
         assert "something-else" in log.text
-        assert EXAMPLE_PAYLOAD["data"]["signature_input"] in log.text
+        assert EXAMPLE_PAYLOAD["data"]["signature_input_v2"] in log.text
 
     def test_retries_authorize_after_a_transient_failure(self, api, ledger, log):
         api.on("POST", AUTHORIZE_PATH, UNAVAILABLE, PROCESSING)
@@ -305,6 +320,48 @@ class TestWithAllowNewPayeesFalse:
         deliver(build_app(api, ledger, allow_new_payees=False), payload_with(payee_trusted=True))
 
         assert len(api.calls(AUTHORIZE_PATH)) == 1
+
+
+def test_a_transfer_method_that_differs_from_the_ledgers_declines_naming_transfer_method(
+    api, ledger
+):
+    ledger.record("po_8812", **{**LEDGER_ENTRY, "transfer_method": "rtc"})
+    api.on("POST", DECLINE_PATH, DECLINED)
+
+    deliver(build_app(api, ledger), EXAMPLE_PAYLOAD)
+
+    [request] = api.calls(DECLINE_PATH)
+    body = json.loads(request.content)
+    assert body["authorization_id"] == AUTHORIZATION_ID
+    assert "transfer_method" in body["reason"]
+    assert api.calls(AUTHORIZE_PATH) == []
+
+
+# A ledger entry written by the 1.x example has no transfer_method: it reads as
+# None, so it still matches a draft whose transfer_method is null.
+def test_a_1x_ledger_entry_without_transfer_method_authorizes_a_null_rail_draft(
+    api, ledger, tmp_path
+):
+    entry = {k: v for k, v in LEDGER_ENTRY.items() if k != "transfer_method"}
+    (tmp_path / "ledger.json").write_text(json.dumps({"po_8812": entry}))
+    payload = payload_with(transfer_method=None)
+    payload["data"]["signature_input_v2"] = EXAMPLE_PAYLOAD["data"]["signature_input_v2"][
+        : -len("eft")
+    ]
+    api.on("POST", AUTHORIZE_PATH, PROCESSING)
+
+    deliver(build_app(api, ledger), payload)
+
+    [request] = api.calls(AUTHORIZE_PATH)
+    signature_input = transfer_authorization.signature_input(
+        **entry,
+        nonce="9f86d081884c7d659a2feaa0c55ad015",
+        client_reference="po_8812",
+        transfer_method=None,
+    )
+    assert json.loads(request.content)["signature"] == transfer_authorization.sign(
+        SECRET, signature_input
+    )
 
 
 def test_a_ledger_mismatch_declines_with_a_reason_naming_the_field(api, ledger, log):

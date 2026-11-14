@@ -7,6 +7,104 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-14
+
+Mirrors manza-ruby 2.0.0 and replays its `cassettes-v2.0.0`: synced to the
+Manza API at getmanza/app `906ec486e5` (API version `2026-11-13`). A major
+release: see Migrating from 1.x below.
+
+### Removed
+
+- **Breaking:** `client.invoices.create_payment_link` (`POST
+  /api/invoices/:id/payment_link`). The API retired the endpoint: ask for the
+  link with `generate_payment_link=True` on `invoices.create` or
+  `invoices.update` instead.
+- **Breaking:** the v1 transfer-authorization signer.
+  `manza.transfer_authorization` builds only the v2 input (below).
+
+### Changed
+
+- **Breaking:** `transfer_authorization.SIGNATURE_VERSION` is
+  `manza.transfer-authorization.v2`, and `signature_input` takes a required
+  `transfer_method` keyword (`str | None`), appended after `client_reference`
+  (`""` when None):
+  `manza.transfer-authorization.v2|payment_id|nonce|amount|currency_code|account_id|payee|client_reference|transfer_method`.
+  The API verifies v2 for every request that is unpinned or sends
+  `Manza-Version: 2026-11-13`; only `2026-03-27` still verifies v1. Pass the
+  payment's `transfer_method` as the API returned it. A call without it raises
+  `TypeError` locally, never a failed signature attempt at the API.
+- The example authorizer (`examples/transfer_authorizer`) records the create
+  response's `transfer_method` in its ledger, checks it against the webhook's
+  `payment.transfer_method`, signs v2, and compares its input with the
+  webhook's `signature_input_v2`. `Ledger.record` takes `transfer_method`.
+- Invoice docs: `account_id` is required on `invoices.create` (without one the
+  API answers 422 `state_error`; an account that is not the entity's, 422 with
+  `param` `account_id`), and `invoices.update` takes it too. An invoice's
+  `status` may be `declined`, and `invoices.delete` also takes a `declined`
+  invoice that has no number.
+
+### Added
+
+- `ManzaPlanLimitReachedError`, a `ManzaValidationError` raised for a 422 whose
+  `type` is `plan_limit_reached` (a plan cap, which the API used to answer with
+  a 500). `kind`, `current` and `max` read the cap from the error body.
+- `generate_payment_link` on `invoices.create` and `invoices.update` (needs the
+  `payment_links:write` scope; taken only while payment links are enabled for
+  the entity). Invoice responses carry `generate_payment_link` and the
+  embedded `account`.
+- `transfer_method` on `payments.create`: `eft` or `rtc` in South Africa,
+  `standard` or `instant` in Morocco; one the market does not offer raises
+  `ManzaValidationError` with `param` `transfer_method`. Payment responses
+  carry `transfer_method` (the rail sent, the provider's default when left out,
+  None where the market offers no choice).
+- Documented: the authorization `refusal_reason` `rail_limit_exceeded` (status
+  `superseded`): an authorized transfer over its rail's limit at execution,
+  sent to the approvers; the authorize call raises a 422
+  `ManzaValidationError` (`state_error`). A non-boolean
+  `generate_payment_link` raises `ManzaValidationError` (400).
+- Documented: the `payment.authorization_requested` webhook's
+  `signature_input_v2` and `payment.transfer_method`, and
+  `transfer_authorizer.get()`'s `trust_new_payees` and `new_payee_limit`.
+
+### Fixed (API side, no wire change)
+
+- `accounts.list_transactions` and `accounts.get_transaction` return posted
+  movements only (getmanza/app 818432457a); the SDK is unchanged.
+
+### Changed (tests)
+
+- The cassette pin is `v2.0.0`. The invoice create/update cassettes, and the
+  new `invoices/create_without_account`,
+  `invoices/create_invalid_generate_payment_link` and
+  `payments/create_invalid_transfer_method`, are replayed with exact body
+  matching.
+
+### Migrating from 1.x
+
+- **`create_payment_link` is gone.** Replace
+  `client.invoices.create_payment_link(id, account_id=acc)` with
+  `client.invoices.update(id, account_id=acc, generate_payment_link=True)`, or
+  pass `generate_payment_link=True` on create. `update` returns the invoice,
+  not a link: the link is made from the invoice's account when the invoice is
+  approved, and appears in the invoice's `payment_link`. `update` takes only an
+  invoice that is still `draft`, `pending_approval` or `declined` (any other
+  raises `ManzaValidationError`, `state_error`); for an invoice already
+  approved or sent, there is no API path to attach a link to it:
+  `client.payment_links.create(account_id=..., amount=..., ...)` makes a
+  standalone link instead.
+- **`account_id` is required on invoice create.** Pass the account the invoice
+  is paid into (`client.accounts.list()`); 1.x calls without it now raise
+  `ManzaValidationError`.
+- **v2 signatures only.** Add `transfer_method=payment["transfer_method"]` to
+  every `transfer_authorization.signature_input` call, and compare with the
+  webhook's `signature_input_v2` instead of `signature_input`. A client pinned
+  to `Manza-Version: 2026-03-27` (`api_version=` or `MANZA_API_VERSION`) is
+  verified v1 and must stay on manza 1.x; unpin it, or pin `2026-11-13`, to
+  move to 2.0.
+- **Plan caps.** An `except ManzaServerError` around creates that may hit a
+  plan cap no longer catches it: catch `ManzaPlanLimitReachedError` (or its
+  parent `ManzaValidationError`), and do not retry it.
+
 ## [1.1.0]
 
 Mirrors manza-ruby 1.2.0 and 1.3.0.

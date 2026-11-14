@@ -23,8 +23,10 @@ class TransferAuthorizer(ResourceBase):
         ``secret_expired``, ``endpoint_disabled``; None when active),
         ``currency_code``, ``per_transfer_limit``, ``daily_limit``,
         ``daily_authorized_total`` (the last 24 hours), ``secret_expires_at``,
-        ``webhook_endpoint_id`` and ``enrolled_at``. It does not show whether new
-        payees are approved. Raises ``ManzaNotFoundError`` when no authorizer is
+        ``webhook_endpoint_id``, ``enrolled_at``, ``trust_new_payees`` (whether
+        "Approve transfers to new payees" is on) and ``new_payee_limit`` (the
+        ceiling for a transfer to a new payee, a decimal string; None while
+        ``trust_new_payees`` is off). Raises ``ManzaNotFoundError`` when no authorizer is
         enrolled.
         """
         return self.http_get("api/transfer_authorizer")

@@ -46,6 +46,7 @@ DRAFT = {
     "account_id": "acc_1",
     "external_account_id": "ext_1",
     "destination_account_id": None,
+    "transfer_method": "standard",
     "authorization": {"status": "refused", "refusal_reason": "over_transfer_limit"},
 }
 
@@ -73,6 +74,7 @@ def test_records_the_draft_from_the_response_and_says_where_it_went(tmp_path):
         "currency_code": "MAD",
         "account_id": "acc_1",
         "payee": "ext:ext_1",
+        "transfer_method": "standard",
     }
     assert (
         f"created payment pay_1: 10.0 MAD to ext:ext_1 (client_reference {client_reference})"
