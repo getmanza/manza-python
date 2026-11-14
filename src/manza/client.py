@@ -84,7 +84,7 @@ class Manza:
 
     @property
     def transfer_drafts(self) -> Payments:
-        """Deprecated: use ``payments``. Kept for all of 1.x: returns the same
+        """Deprecated: use ``payments``. Kept in 1.x and 2.0: returns the same
         resource, which calls ``/api/payments``. Emits a ``DeprecationWarning``,
         which Python shows only when deprecation warnings are on (``-W
         default::DeprecationWarning``, or the test runner)."""

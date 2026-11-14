@@ -54,7 +54,7 @@ signature = ta.sign(secret, ta.signature_input(...))   # built from YOUR record 
 manza.payments.authorize(id, authorization_id, signature)
 manza.payments.decline(id, authorization_id, reason="...")
 manza.transfer_authorizer.get()        # status, suspension_reason, limits; 404: none enrolled
-# manza.transfer_drafts: deprecated alias of manza.payments (DeprecationWarning), all of 1.x
+# manza.transfer_drafts: deprecated alias of manza.payments (DeprecationWarning), kept in 2.0
 ```
 
 - `Page` (generic `Page[T]`) is cursor-based with a hard cap of 100 per page (`MAX_PER_PAGE`); `auto_paging_iter()` chases cursors.
@@ -88,7 +88,7 @@ manza.transfer_authorizer.get()        # status, suspension_reason, limits; 404:
 - **Error model is shared across the SDK family.** Adding an error class means coordinating manza-ruby and manza-ts at minimum. `ManzaConflictError` handles 409 responses.
 - **Signer.** `transfer_authorization` must keep reproducing the three fixed v2 vectors from manza-ruby's `spec/manza/transfer_authorization_spec.rb` (mirrored in `tests/test_transfer_authorization.py`). Never sign the server's `signature_input_v2` blindly: build it from your own record of the transfer.
 - **Release.** `bin/release` is byte-identical across the SDK repos and is never edited in place. Repo-specific logic lives in `scripts/version` (reads/writes `src/manza/_version.py`) and `scripts/release-check` (install, fetch cassettes, ruff, mypy, pytest). `release.yml` gates on tag == package version. Publishing uses PyPI **OIDC trusted publishing** (no long-lived token) through the GitHub environment `pypi`; the PyPI trusted-publisher binding must name `getmanza/manza-python`, workflow `release.yml`, environment `pypi`. Verify at https://pypi.org/manage/project/manza/settings/publishing/ if it ever drifts.
-- **Env vars: `MANZA_*` first, `ZAZU_*` fallback.** `src/manza/_env.py` reads `MANZA_<NAME>`, then the legacy `ZAZU_<NAME>` with a one-time `FutureWarning`, for all of 1.x. Fixture vars (`MANZA_FIXTURE_*`) have no fallback.
+- **Env vars: `MANZA_*` first, `ZAZU_*` fallback.** `src/manza/_env.py` reads `MANZA_<NAME>`, then the legacy `ZAZU_<NAME>` with a one-time `FutureWarning`, kept in 2.0. Fixture vars (`MANZA_FIXTURE_*`) have no fallback.
 - **The repo moved from `getzazu/zazu-python` to `getmanza/manza-python`.** Remotes and URLs must say `getmanza/manza-python`.
 - **Ruby is the canonical surface.** Don't add a method that has no cassette to back it.
 - **Snake-case wire format.** Don't transform request/response bodies.

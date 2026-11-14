@@ -42,6 +42,9 @@ release: see Migrating from 1.x below.
   `param` `account_id`), and `invoices.update` takes it too. An invoice's
   `status` may be `declined`, and `invoices.delete` also takes a `declined`
   invoice that has no number.
+- The legacy `ZAZU_*` environment fallback and the `client.transfer_drafts`
+  alias stay in 2.0 (as in manza-ruby 2.0.0); the `FutureWarning` now says the
+  fallback goes in a later major release instead of "in 2.0".
 
 ### Added
 

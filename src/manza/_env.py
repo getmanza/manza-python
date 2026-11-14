@@ -1,6 +1,6 @@
 """Environment lookup: `MANZA_<NAME>` first, then the legacy `ZAZU_<NAME>`.
 
-The legacy name still works for all of 1.x and warns once per variable."""
+The legacy name still works in 1.x and 2.0 and warns once per variable."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def get(name: str) -> str | None:
         if first:
             warnings.warn(
                 f"{legacy} is deprecated; set MANZA_{name} instead. "
-                "The ZAZU_* fallback will be removed in 2.0.",
+                "The ZAZU_* fallback will be removed in a later major release.",
                 FutureWarning,
                 stacklevel=3,
             )
