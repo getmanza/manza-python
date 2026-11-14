@@ -217,9 +217,9 @@ for invoice in client.invoices.list().auto_paging_iter():
 ## Errors
 
 Eleven concrete subclasses; discriminate with `isinstance`. `ManzaValidationError`
-covers 400 and 422, and its subclass `ManzaPlanLimitReachedError` a 422 whose
-`type` is `plan_limit_reached` (exposing `kind`, `current` and `max`; do not
-retry it). `ManzaConflictError` covers 409 and exposes `payment_id`:
+covers 400 and 422; its subclass `ManzaPlanLimitReachedError` covers a 422
+whose `type` is `plan_limit_reached` (exposing `kind`, `current` and `max`; do
+not retry it). `ManzaConflictError` covers 409 and exposes `payment_id`:
 
 ```python
 from manza import (
